@@ -372,8 +372,10 @@ if (startBtn) {
 (function(){
   if (!videoEl) return; // Not on scanner page
   function kick(){ try{ runStartup(); } catch(e){} }
-  if (document.readyState==='complete' || document.readyState==='interactive') setTimeout(kick, 200);
-  else document.addEventListener('DOMContentLoaded', function(){ setTimeout(kick, 200); }, { once: true });
+  let delay = 200;
+  try { if (localStorage.getItem('artlens:skipCountdown') === '1') delay = 0; } catch {}
+  if (document.readyState==='complete' || document.readyState==='interactive') setTimeout(kick, delay);
+  else document.addEventListener('DOMContentLoaded', function(){ setTimeout(kick, delay); }, { once: true });
 })();
 
 async function startCamera() {
