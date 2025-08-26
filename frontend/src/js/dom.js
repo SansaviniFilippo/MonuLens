@@ -8,10 +8,16 @@ export const statusEl = document.getElementById('status');
 export const infoEl = document.getElementById('info');
 export const hintEl = document.getElementById('hint');
 export const hotspotsEl = document.getElementById('hotspots');
+
+// Detail overlay elements
 export const detailEl = document.getElementById('detail');
 export const detailTitleEl = document.getElementById('detailTitle');
-export const detailMetaEl = document.getElementById('detailMeta');
+export const detailMetaEl = document.getElementById('detailMeta'); // legacy support
 export const detailBodyEl = document.getElementById('detailBody');
+export const detailArtistEl = document.getElementById('detailArtist');
+export const detailYearEl = document.getElementById('detailYear');
+export const detailMuseumEl = document.getElementById('detailMuseum');
+export const detailLocationEl = document.getElementById('detailLocation');
 export const backBtn = document.getElementById('backBtn');
 
 export function get2DContext() {
