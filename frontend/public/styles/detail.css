@@ -59,8 +59,12 @@
   color: #111827;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   font-size: 16px; /* 16px icon */
-  display: inline-grid;
+  line-height: 0; /* remove line box influence for perfect centering */
+  display: grid; /* primary centering */
   place-items: center;
+  /* Flex fallback for older engines */
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   transition: background-color 150ms ease;
 }
