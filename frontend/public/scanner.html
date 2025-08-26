@@ -37,58 +37,13 @@
     <div id="hotspots" class="hotspots"></div>
 
     <div id="detail" class="detail hidden" aria-modal="true" role="dialog">
-      <header class="detail-header" role="banner">
-        <button id="backBtn" class="detail-back" type="button" aria-label="Back" data-icon="true">
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-            <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-        <div class="detail-heading">Artwork Details</div>
-      </header>
-      <div class="detail-card" role="document">
-        <h2 class="art-title" id="detailTitle"></h2>
-        <hr class="divider" aria-hidden="true" />
-
-        <section class="info-section">
-          <div class="info-label">
-            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" class="ico"><path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5zm0 2c-4.418 0-8 2.239-8 5v2h16v-2c0-2.761-3.582-5-8-5z" fill="currentColor"/></svg>
-            <span>Artist</span>
-          </div>
-          <div class="info-value" id="detailArtist">—</div>
-        </section>
-
-        <section class="info-section">
-          <div class="info-label">
-            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" class="ico"><path d="M7 2h10a2 2 0 012 2v3H5V4a2 2 0 012-2zm14 7H3v11a2 2 0 002 2h14a2 2 0 002-2V9zM7 13h5v5H7v-5z" fill="currentColor"/></svg>
-            <span>Year</span>
-          </div>
-          <div class="info-value" id="detailYear">—</div>
-        </section>
-
-        <section class="info-section">
-          <div class="info-label">
-            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" class="ico"><path d="M4 22h16v-2H4v2zm8-20l8 6H4l8-6zm-5 8h2v6H7v-6zm4 0h2v6h-2v-6zm4 0h2v6h-2v-6z" fill="currentColor"/></svg>
-            <span>Museum</span>
-          </div>
-          <div class="info-value" id="detailMuseum">—</div>
-        </section>
-
-        <section class="info-section">
-          <div class="info-label">
-            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" class="ico"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" fill="currentColor"/></svg>
-            <span>Location</span>
-          </div>
-          <div class="info-value" id="detailLocation">—</div>
-        </section>
-
-        <hr class="divider" aria-hidden="true" />
-        <section class="info-section description">
-          <div class="info-label">
-            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" class="ico"><path d="M4 4h16v2H4V4zm0 6h16v2H4v-2zm0 6h10v2H4v-2z" fill="currentColor"/></svg>
-            <span>Description</span>
-          </div>
-          <div class="info-value" id="detailBody"></div>
-        </section>
+      <div class="detail-card">
+        <div class="detail-title" id="detailTitle"></div>
+        <div class="detail-meta" id="detailMeta"></div>
+        <div class="detail-body" id="detailBody"></div>
+        <div class="detail-actions">
+          <button id="backBtn" class="back" type="button">Back</button>
+        </div>
       </div>
     </div>
 

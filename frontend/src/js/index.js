@@ -1,4 +1,4 @@
-import { appEl, videoEl, canvasEl, hudEl, startBtn, statusEl, infoEl, detailEl, detailTitleEl, detailMetaEl, detailBodyEl, detailArtistEl, detailYearEl, detailMuseumEl, detailLocationEl, backBtn } from './dom.js';
+import { appEl, videoEl, canvasEl, hudEl, startBtn, statusEl, infoEl, detailEl, detailTitleEl, detailMetaEl, detailBodyEl, backBtn } from './dom.js';
 import { status as setStatus, showInfo, hideHint, clearHotspots, clientPointToVideo, pointInBox } from './ui.js';
 import { initDetector, detector, closeDetector } from './detection.js';
 import { initEmbeddingModel } from './embedding.js';
@@ -85,11 +85,7 @@ function applyLanguageToUI() {
   if (titleEl && t.title) titleEl.textContent = t.title;
   if (statusEl && t.status) statusEl.textContent = t.status;
   if (startBtn && t.start) startBtn.textContent = t.start;
-  // Only set back button label if it is not icon-only (no data-icon attribute)
-  if (backBtn && t.back) {
-    const isIconOnly = backBtn.hasAttribute('data-icon');
-    if (!isIconOnly) backBtn.textContent = t.back;
-  }
+  if (backBtn && t.back) backBtn.textContent = t.back;
 
   // Activation overlay localization (scanner page)
   const activateTitleEl = document.getElementById('activateTitle');
@@ -189,12 +185,6 @@ function openDetail(entry, confidence) {
   hideHint();
   clearHotspots();
   if (detailTitleEl) detailTitleEl.textContent = entry?.title || 'Opera';
-  // Populate new fields (reset placeholders when missing)
-  if (detailArtistEl) detailArtistEl.textContent = (typeof entry?.artist === 'string' && entry.artist) ? entry.artist : '—';
-  if (detailYearEl) detailYearEl.textContent = (entry?.year != null && String(entry.year).length) ? String(entry.year) : '—';
-  if (detailMuseumEl) detailMuseumEl.textContent = (typeof entry?.museum === 'string' && entry.museum) ? entry.museum : '—';
-  if (detailLocationEl) detailLocationEl.textContent = (typeof entry?.location === 'string' && entry.location) ? entry.location : '—';
-  // Legacy meta line for backward compatibility
   let meta = '';
   if (entry?.artist) meta += entry.artist;
   if (entry?.year) meta += (meta ? ' · ' : '') + entry.year;
