@@ -87,15 +87,8 @@ function drawRoundedBox(ctx, x, y, w, h) {
   const r = Math.max(10, Math.min(w, h) * 0.06);
   ctx.save();
   roundRectPath(ctx, x + 0.5, y + 0.5, Math.max(1, w - 1), Math.max(1, h - 1), r);
-  // Subtle glass gradient similar to reference
-  const grad = ctx.createLinearGradient(x, y, x + w, y);
-  grad.addColorStop(0, 'rgba(0,212,255,0.16)');
-  grad.addColorStop(0.55, 'rgba(50,120,220,0.14)');
-  grad.addColorStop(1, 'rgba(0,212,255,0.16)');
-  const prevFill = ctx.fillStyle;
-  ctx.fillStyle = grad;
+  // Fill using theme variable-defined fill color (--box-fill)
   ctx.fill();
-  ctx.fillStyle = prevFill;
   ctx.restore();
   // Decorative corner brackets outside the box (slightly offset)
   drawCornerBrackets(ctx, x, y, w, h, getCornerLen(w, h), CORNER_OFFSET);
@@ -105,8 +98,8 @@ function drawBestGlow(ctx, x, y, w, h) {
   ctx.save();
   ctx.lineWidth = 3;
   ctx.shadowBlur = 14;
-  ctx.shadowColor = 'rgba(0,212,255,0.35)';
-  ctx.strokeStyle = 'rgba(0,212,255,0.85)';
+  ctx.shadowColor = (getComputedStyle(document.documentElement).getPropertyValue('--box-glow') || 'rgba(217,119,6,0.35)').trim();
+  ctx.strokeStyle = (getComputedStyle(document.documentElement).getPropertyValue('--box-glow-strong') || 'rgba(217,119,6,0.85)').trim();
   roundRectPath(ctx, x, y, w, h, Math.max(10, Math.min(w, h) * 0.06));
   ctx.stroke();
   ctx.restore();
@@ -120,9 +113,9 @@ function drawCrosshair(ctx, x, y, w, h) {
   ctx.save();
   ctx.lineWidth = 2;
   ctx.lineCap = 'round';
-  const col = getComputedStyle(document.documentElement).getPropertyValue('--box-color') || '#00D4FF';
+  const col = getComputedStyle(document.documentElement).getPropertyValue('--box-color') || '#d97706';
   ctx.strokeStyle = col.trim();
-  ctx.shadowColor = 'rgba(0,212,255,0.45)';
+  ctx.shadowColor = (getComputedStyle(document.documentElement).getPropertyValue('--box-glow') || 'rgba(217,119,6,0.45)').trim();
   ctx.shadowBlur = 6;
   ctx.beginPath();
   ctx.moveTo(cx - len, cy);
@@ -200,8 +193,8 @@ export async function drawDetections(ctx, result, onHotspotClick) {
   ctx.lineWidth = lw;
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
-  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--box-color') || '#00D4FF';
-  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--box-fill') || 'rgba(0,212,255,0.06)';
+  ctx.strokeStyle = (getComputedStyle(document.documentElement).getPropertyValue('--box-color') || '#d97706').trim();
+  ctx.fillStyle = (getComputedStyle(document.documentElement).getPropertyValue('--box-fill') || 'rgba(217,119,6,0.12)').trim();
   ctx.font = '14px Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
   lastMatches = [];
 
