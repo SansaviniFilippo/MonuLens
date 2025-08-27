@@ -21,6 +21,7 @@ function getI18n(lang) {
         subHTML: "Preparati a <span class=\"accent\">inquadrare l’opera</span> con la fotocamera",
         permNeeded: "Autorizzazione fotocamera necessaria"
       },
+      scannerHeader: { title: "Scansione Opera" },
       // Homepage strings
       home: {
         subtitle: "Scopri l'arte attraverso la tecnologia",
@@ -39,6 +40,7 @@ function getI18n(lang) {
         subHTML: "Get ready to <span class=\"accent\">frame the artwork</span> in your camera view",
         permNeeded: "Camera permission needed"
       },
+      scannerHeader: { title: "Scan Artwork" },
       home: {
         subtitle: "Discover art through technology",
         scan: "Scan Artwork",
@@ -95,6 +97,12 @@ function applyLanguageToUI() {
   }
   if (activateSubEl && t.activation?.subHTML) {
     activateSubEl.innerHTML = t.activation.subHTML;
+  }
+
+  // Scanner header title localization
+  const scannerHeaderTitle = document.querySelector('.camera-header .header-title span');
+  if (scannerHeaderTitle && t.scannerHeader?.title) {
+    scannerHeaderTitle.textContent = t.scannerHeader.title;
   }
 
   // Homepage UI (gate on presence of #scanBtn)
