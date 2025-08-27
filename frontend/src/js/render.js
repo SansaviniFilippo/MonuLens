@@ -1,5 +1,5 @@
 import { videoEl, canvasEl } from './dom.js';
-import { clearHotspots, renderHotspot, placeHintOverBox, showHintFor, hideHint, showInfo } from './ui.js';
+import { clearHotspots, renderHotspot, placeHintOverBox, showHintFor, hideHint, showInfo, videoPointToDisplay } from './ui.js';
 import { cropToCanvasFromVideo, embedFromCanvas, cosineSim, hasEmbedModel } from './embedding.js';
 import { artworkDB, dbDim, pickLangText } from './db.js';
 import { COSINE_THRESHOLD, DEBUG_FALLBACK_CROP, MAX_BOXES_PER_FRAME, MIN_BOX_SCORE } from './constants.js';
@@ -242,6 +242,8 @@ export async function drawDetections(ctx, result, onHotspotClick) {
             showHintFor(entry, box);
           }
           renderHotspot({ entry, confidence, box }, onHotspotClick);
+          // Update camera circle labels above bbox
+          updateBboxLabels(lastMatches);
         }
       } catch (e) { console.warn('Fallback match failed:', e); }
     }
@@ -250,6 +252,8 @@ export async function drawDetections(ctx, result, onHotspotClick) {
       hideHint();
       showInfo(null);
       clearHotspots();
+      // Clear camera circle labels
+      updateBboxLabels([]);
     }
     return;
   }
@@ -338,6 +342,8 @@ export async function drawDetections(ctx, result, onHotspotClick) {
     drawCrosshair(ctx, best.box.originX, best.box.originY, best.box.width, best.box.height);
     // Hotspot and hint for current best
     renderHotspot(best, onHotspotClick);
+    // Update camera circle labels for all matches
+    updateBboxLabels(lastMatches);
     placeHintOverBox(best.box);
     try { showInfo(best.entry.title || 'Artwork', pickLangText(best.entry.descriptions), best.confidence); } catch {}
     const key = (best.entry && (best.entry.id != null ? String(best.entry.id) : (best.entry.title || '')));
@@ -351,12 +357,14 @@ export async function drawDetections(ctx, result, onHotspotClick) {
     const b = stickyBest;
     drawBestGlow(ctx, b.box.originX, b.box.originY, b.box.width, b.box.height);
     drawCrosshair(ctx, b.box.originX, b.box.originY, b.box.width, b.box.height);
+    updateBboxLabels([b]);
   } else {
     stickyBest = null;
     lastRecognizedKey = null;
     hideHint();
     showInfo(null);
     clearHotspots();
+    updateBboxLabels([]);
   }
 }
 
@@ -367,4 +375,31 @@ export function getLastMatches() {
 export function resetRenderState() {
   lastMatches = [];
   lastRecognizedKey = null;
+}
+
+// Render/update circular camera labels above recognized bboxes
+function updateBboxLabels(matches) {
+  try {
+    const host = document.getElementById('bboxLabels');
+    if (!host) return;
+    host.innerHTML = '';
+    if (!matches || !matches.length) return;
+    for (const m of matches) {
+      const box = m && m.box;
+      if (!box) continue;
+      const cx = (box.originX || 0) + (box.width || 0) / 2;
+      const ty = (box.originY || 0); // top edge
+      const pt = videoPointToDisplay(cx, ty);
+      const el = document.createElement('div');
+      el.className = 'cam-label';
+      el.style.left = `${pt.x}px`;
+      el.style.top = `${pt.y}px`;
+      // visual only; do not capture pointer events
+      el.style.pointerEvents = 'none';
+      const ico = document.createElement('span');
+      ico.className = 'cam-ico';
+      el.appendChild(ico);
+      host.appendChild(el);
+    }
+  } catch (e) { /* noop */ }
 }
