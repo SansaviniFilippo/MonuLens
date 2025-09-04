@@ -346,26 +346,35 @@ def delete_artwork(art_id: str, x_admin_token: str = Header(default="")):
 
 @app.get("/artworks/{art_id}")
 def get_artwork_detail(art_id: str):
-    row = run(
-        """
-        select id, title, artist, year, museum, location, descriptions
-        from artworks where id = :id
-        """,
-        {"id": art_id}
-    ).mappings().first()
-    if not row:
+    # Serve artwork details from in-memory cache
+    art = artworks.get(art_id)
+    if not art:
         raise HTTPException(status_code=404, detail="Artwork not found")
-    desc_rows = run(
-        """
-        select descriptor_id
-        from descriptors
-        where artwork_id = :id
-        order by descriptor_id
-        """,
-        {"id": art_id}
-    ).mappings().all()
-    data = dict(row)
-    data["descriptors"] = [{"descriptor_id": r["descriptor_id"], "image_path": None} for r in desc_rows]
+
+    data = {
+        "id": art_id,
+        "title": art.get("title"),
+        "artist": art.get("artist"),
+        "year": art.get("year"),
+        "museum": art.get("museum"),
+        "location": art.get("location"),
+        "descriptions": art.get("descriptions"),
+    }
+
+    # Build descriptors list from cached flat_descriptors
+    descs = []
+    for d in flat_descriptors:
+        if d.get("artwork_id") == art_id:
+            desc_id = d.get("descriptor_id")
+            if desc_id is None:
+                continue
+            descs.append({
+                "descriptor_id": desc_id,
+                "image_path": d.get("image_path"),  # may be None in current cache
+            })
+    # Sort by descriptor_id for stable ordering
+    descs.sort(key=lambda x: str(x.get("descriptor_id")))
+    data["descriptors"] = descs
     return data
 
 
