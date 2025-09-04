@@ -1,9 +1,8 @@
-from fastapi import FastAPI, HTTPException, Header, Body
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict, Any, Tuple
 import os
-import asyncio
 import numpy as np
 
 # ----------------------------------------------------------------------------
@@ -22,7 +21,7 @@ DEFAULT_ORIGINS = [
 FRONTEND_ORIGINS = [o.strip() for o in os.getenv("FRONTEND_ORIGINS", ",".join(DEFAULT_ORIGINS)).split(",") if o.strip()]
 
 # Supabase integration imports and admin token
-from .db import run, get_db_url_diagnostics
+from .db import run
 from .service import upsert_artwork_with_descriptors
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN")
 
@@ -98,14 +97,12 @@ class MatchResponse(BaseModel):
 # ----------------------------------------------------------------------------
 @app.get("/health")
 def health():
-    info = {
+    return {
         "status": "ok",
         "count": len(flat_descriptors),
         "dim": db_dim,
         "backend_db": "supabase",
-        "db_url": get_db_url_diagnostics(),
     }
-    return info
 
 
 # Option B: separate catalog (metadata) and descriptors (embeddings)
@@ -439,50 +436,9 @@ def _refresh_cache_from_db() -> _TupleAlias[int, int]:
 
 # Refresh cache on startup so /match is ready without legacy JSON
 @app.on_event("startup")
-async def _startup_refresh_cache_async():
-    async def retry_loop():
-        delay = 2
-        while True:
-            try:
-                a, d = _refresh_cache_from_db()
-                print(f"[ArtLens] Cache loaded from Supabase: artworks={a}, descriptors={d}, dim={db_dim}")
-                return
-            except Exception as e:
-                print(f"[ArtLens] Failed to load cache from Supabase at startup (will retry in {delay}s): {e}")
-                await asyncio.sleep(delay)
-                delay = min(delay * 2, 60)
-    # fire-and-forget background task
-    asyncio.create_task(retry_loop())
-
-
-# -----------------------------
-# Remote performance logging (Option B)
-# -----------------------------
-from typing import Dict, Any as _AnyAlias
-
-@app.post("/log_perf")
-def log_perf(payload: Dict[str, _AnyAlias] = Body(...)):
-    """Receive frontend perf batches and print summary to logs.
-    Expected payload: { meta:{...}, data:{ t:[], crop:[], embed:[], match:[], dbSize:[], dim:[] }, sessionId, seq, reason }
-    """
+def _startup_refresh_cache():
     try:
-        meta = payload.get("meta", {}) if isinstance(payload, dict) else {}
-        data = payload.get("data", {}) if isinstance(payload, dict) else {}
-        sess = payload.get("sessionId") if isinstance(payload, dict) else None
-        seq = payload.get("seq") if isinstance(payload, dict) else None
-        def _mean(arr):
-            try:
-                return float(sum(arr) / len(arr)) if isinstance(arr, list) and arr else 0.0
-            except Exception:
-                return 0.0
-        n = len(data.get("t", [])) if isinstance(data.get("t", []), list) else 0
-        mc = _mean(data.get("crop", []))
-        me = _mean(data.get("embed", []))
-        mm = _mean(data.get("match", []))
-        cfg = meta.get("config") if isinstance(meta, dict) else None
-        tfb = meta.get("tfBackend") if isinstance(meta, dict) else None
-        print(f"[PerfLog] session={sess} seq={seq} samples={n} mean(ms) crop={mc:.2f} embed={me:.2f} match={mm:.2f} backend={tfb} conf={cfg}")
-        return {"status": "ok", "accepted": int(n)}
+        a, d = _refresh_cache_from_db()
+        print(f"[ArtLens] Cache loaded from Supabase: artworks={a}, descriptors={d}, dim={db_dim}")
     except Exception as e:
-        print("[PerfLog] error processing payload:", e)
-        raise HTTPException(status_code=400, detail="invalid payload")
+        print(f"[ArtLens] Failed to load cache from Supabase at startup: {e}")
