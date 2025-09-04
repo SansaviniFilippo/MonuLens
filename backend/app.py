@@ -290,8 +290,15 @@ def _ensure_unique_art_id(base_id: str) -> str:
     candidate = base_id or "opera"
     suffix = 2
     while True:
-        row = run("select 1 from artworks where id = :id limit 1", {"id": candidate}).fetchone()
-        if not row:
+        db_taken = False
+        try:
+            row = run("select 1 from artworks where id = :id limit 1", {"id": candidate}).fetchone()
+            db_taken = bool(row)
+        except Exception:
+            # DB not reachable; fall back to in-memory uniqueness only
+            db_taken = False
+        mem_taken = candidate in artworks
+        if not (db_taken or mem_taken):
             return candidate
         candidate = f"{base_id}-{suffix}" if base_id else f"opera-{suffix}"
         suffix += 1
@@ -309,20 +316,59 @@ def upsert_artwork(art: ArtworkUpsert, x_admin_token: str = Header(default="")):
             art_id = _ensure_unique_art_id(base)
             art_dict["id"] = art_id
 
-        upsert_res = upsert_artwork_with_descriptors(art_dict)
-        # Refresh in-memory cache from Supabase so /match reflects the latest data
         try:
-            _refresh_cache_from_db()
-        except Exception as re:
-            # Fallback: apply to in-memory cache and persist warm cache to disk
-            print("[ArtLens] cache refresh error after upsert, applying fallback:", re)
+            # Try DB upsert first
+            upsert_res = upsert_artwork_with_descriptors(art_dict)
+            # Refresh in-memory cache from Supabase so /match reflects the latest data
             try:
-                _apply_upsert_to_cache(art_dict, upsert_res or {})
+                _refresh_cache_from_db()
+            except Exception as re:
+                # Fallback: apply to in-memory cache and persist warm cache to disk
+                print("[ArtLens] cache refresh error after upsert, applying fallback:", re)
+                try:
+                    _apply_upsert_to_cache(art_dict, upsert_res or {})
+                    _save_cache_to_file()
+                except Exception as e2:
+                    print("[ArtLens] fallback cache apply failed:", e2)
+        except ValueError as e:
+            # Validation error coming from service (e.g., dim mismatch)
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            # DB write failed; fallback to in-memory cache persistence
+            print("[ArtLens] DB upsert failed, saving to in-memory cache:", e)
+            vds = art_dict.get("visual_descriptors") or []
+            normalized = []
+            observed_dim = None
+            for idx, vd in enumerate(vds):
+                emb = vd.get("embedding")
+                if isinstance(emb, list):
+                    vec = np.asarray(emb, dtype=np.float32)
+                    vec = _l2_normalize(vec)
+                    norm_list = vec.astype(float).tolist()
+                    if observed_dim is None:
+                        observed_dim = len(norm_list)
+                    elif len(norm_list) != observed_dim:
+                        raise HTTPException(status_code=400, detail=f"Descriptor {idx} dim mismatch")
+                    normalized.append({
+                        "descriptor_id": vd.get("id") or f"main#{idx}",
+                        "embedding": norm_list,
+                    })
+            global db_dim
+            if observed_dim is not None:
+                if db_dim is None:
+                    db_dim = observed_dim
+                elif observed_dim != db_dim:
+                    raise HTTPException(status_code=400, detail=f"Embedding dim mismatch: got {observed_dim}, expected {db_dim}")
+            upsert_res = {"id": art_id, "descriptors": normalized, "observed_dim": observed_dim}
+            try:
+                _apply_upsert_to_cache(art_dict, upsert_res)
                 _save_cache_to_file()
             except Exception as e2:
-                print("[ArtLens] fallback cache apply failed:", e2)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+                print("[ArtLens] in-memory cache fallback failed:", e2)
+                raise HTTPException(status_code=500, detail="Failed to persist in memory")
+    except HTTPException:
+        # Re-raise HTTP errors untouched
+        raise
     except Exception as e:
         print("[ArtLens] upsert error:", e)
         raise HTTPException(status_code=500, detail="Failed to persist")
