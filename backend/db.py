@@ -20,13 +20,24 @@ else:
     DB_URL = raw_url
 
 
+# Build connect args with SSL and keepalives for Render/Supabase/PgBouncer compatibility
+_connect_args = {
+    "prepare_threshold": None,  # disable prepared statements (PgBouncer safe)
+    "sslmode": os.getenv("PGSSLMODE", "require"),
+    "connect_timeout": int(os.getenv("PGCONNECT_TIMEOUT", "10")),
+    # TCP keepalives (help avoid idle disconnects on Render/Supabase)
+    "keepalives": 1,
+    "keepalives_idle": int(os.getenv("PG_KEEPALIVES_IDLE", "30")),
+    "keepalives_interval": int(os.getenv("PG_KEEPALIVES_INTERVAL", "10")),
+    "keepalives_count": int(os.getenv("PG_KEEPALIVES_COUNT", "5")),
+    "application_name": os.getenv("PGAPPNAME", "ArtLens"),
+}
+
 engine = create_engine(
     DB_URL,
-    client_encoding='utf8',
+    client_encoding="utf8",
     poolclass=NullPool,
-    connect_args={
-        "prepare_threshold": None  # per disabilitare prepared statements
-    }
+    connect_args=_connect_args,
 )
 
 

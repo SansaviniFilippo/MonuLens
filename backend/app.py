@@ -437,11 +437,25 @@ def _refresh_cache_from_db() -> _TupleAlias[int, int]:
 # Refresh cache on startup so /match is ready without legacy JSON
 @app.on_event("startup")
 def _startup_refresh_cache():
-    try:
-        a, d = _refresh_cache_from_db()
-        print(f"[ArtLens] Cache loaded from Supabase: artworks={a}, descriptors={d}, dim={db_dim}")
-    except Exception as e:
-        print(f"[ArtLens] Failed to load cache from Supabase at startup: {e}")
+    # Retry startup cache load to tolerate transient DB connectivity on Render/Supabase
+    max_retries = int(os.getenv("STARTUP_DB_RETRIES", "5"))
+    delay = float(os.getenv("STARTUP_DB_INITIAL_DELAY", "1.5"))
+    last_err = None
+    for attempt in range(1, max_retries + 1):
+        try:
+            a, d = _refresh_cache_from_db()
+            print(f"[ArtLens] Cache loaded from Supabase: artworks={a}, descriptors={d}, dim={db_dim}")
+            return
+        except Exception as e:
+            last_err = e
+            if attempt < max_retries:
+                print(f"[ArtLens] Startup cache load attempt {attempt}/{max_retries} failed: {e}. Retrying in {delay:.1f}s...")
+                import time
+                time.sleep(delay)
+                delay = min(delay * 2, 15.0)
+            else:
+                print(f"[ArtLens] Failed to load cache from Supabase at startup after {max_retries} attempts: {e}")
+                break
 
 
 
