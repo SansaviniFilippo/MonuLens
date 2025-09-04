@@ -2,7 +2,7 @@ import { videoEl, canvasEl } from './dom.js';
 import { clearHotspots, renderHotspot, placeHintOverBox, showHintFor, hideHint, showInfo, videoPointToDisplay } from './ui.js';
 import { cropToCanvasFromVideo, embedFromCanvas, hasEmbedModel } from './embedding.js';
 import { artworkDB, dbDim, pickLangText, getLang } from './db.js';
-import { COSINE_THRESHOLD, DEBUG_FALLBACK_CROP, MAX_BOXES_PER_FRAME, MIN_BOX_SCORE } from './constants.js';
+import { BACKEND_URL, COSINE_THRESHOLD, DEBUG_FALLBACK_CROP, MAX_BOXES_PER_FRAME, MIN_BOX_SCORE, CROP_SIZE } from './constants.js';
 
 let lastMatches = [];
 let lastRecognizedKey = null;
@@ -52,6 +52,81 @@ function logPerfIfNeeded() {
     s.samples = 0; s.cropMs = 0; s.embedMs = 0; s.matchMs = 0; s.lastPrint = t;
   }
 }
+
+// --- Remote perf recorder (Option B, opt-in via ?telemetry=1) ---
+const __perfRemote = {
+  enabled: false,
+  sessionId: Math.random().toString(36).slice(2) + Date.now().toString(36),
+  t: [], crop: [], embed: [], match: [], dbSize: [], dim: [],
+};
+
+function __perfInitRemoteIfRequested() {
+  try { const qs = new URLSearchParams(location.search); __perfRemote.enabled = (qs.get('telemetry') === '1'); } catch { __perfRemote.enabled = false; }
+  if (__perfRemote.enabled) {
+    setInterval(__perfUploadBatch, 10000); // ogni 10s
+    try {
+      window.addEventListener('pagehide', __perfBeaconFlush, { capture: true });
+      window.addEventListener('beforeunload', __perfBeaconFlush, { capture: true });
+    } catch {}
+    console.log('[Perf] remote logging enabled, session:', __perfRemote.sessionId);
+  }
+}
+
+async function __perfUploadBatch(reason = 'periodic') {
+  if (!__perfRemote.enabled) return;
+  const N = __perfRemote.t.length; if (!N) return;
+  const meta = {
+    tfBackend: (globalThis.tf && globalThis.tf.getBackend ? globalThis.tf.getBackend() : null),
+    config: { MAX_BOXES_PER_FRAME, MIN_BOX_SCORE, CROP_SIZE },
+    timeNow: new Date().toISOString(),
+  };
+  const payload = {
+    sessionId: __perfRemote.sessionId,
+    seq: Date.now(),
+    reason,
+    meta,
+    data: {
+      t: __perfRemote.t, crop: __perfRemote.crop, embed: __perfRemote.embed, match: __perfRemote.match,
+      dbSize: __perfRemote.dbSize, dim: __perfRemote.dim,
+    }
+  };
+  // svuota buffer dopo la copia
+  __perfRemote.t = []; __perfRemote.crop = []; __perfRemote.embed = []; __perfRemote.match = [];
+  __perfRemote.dbSize = []; __perfRemote.dim = [];
+  try {
+    await fetch(`${BACKEND_URL}/log_perf`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true, body: JSON.stringify(payload) });
+  } catch (e) {
+    // Re-queue su errore
+    const d = payload.data;
+    try {
+      __perfRemote.t.push(...d.t); __perfRemote.crop.push(...d.crop); __perfRemote.embed.push(...d.embed); __perfRemote.match.push(...d.match);
+      __perfRemote.dbSize.push(...d.dbSize); __perfRemote.dim.push(...d.dim);
+    } catch {}
+    console.warn('[Perf] upload failed, will retry:', e);
+  }
+}
+
+function __perfBeaconFlush() {
+  if (!__perfRemote.enabled) return;
+  const N = __perfRemote.t.length; if (!N) return;
+  const payload = {
+    sessionId: __perfRemote.sessionId, seq: Date.now(), reason: 'unload',
+    meta: { timeEnd: new Date().toISOString() },
+    data: {
+      t: __perfRemote.t, crop: __perfRemote.crop, embed: __perfRemote.embed, match: __perfRemote.match,
+      dbSize: __perfRemote.dbSize, dim: __perfRemote.dim,
+    }
+  };
+  try {
+    const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+    if (!(navigator.sendBeacon && navigator.sendBeacon(`${BACKEND_URL}/log_perf`, blob))) {
+      void fetch(`${BACKEND_URL}/log_perf`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true, body: JSON.stringify(payload) });
+    }
+  } catch {}
+}
+
+// Initialize remote perf if requested
+try { __perfInitRemoteIfRequested(); } catch {}
 
 function nowMs() { return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); }
 
@@ -328,6 +403,18 @@ export async function drawDetections(ctx, result, onHotspotClick) {
           perfStats.embedMs += (t2 - t1);
           perfStats.matchMs += (t3 - t2);
           logPerfIfNeeded();
+
+          // Remote telemetry (Option B): buffer this sample if enabled
+          try {
+            if (__perfRemote && __perfRemote.enabled) {
+              __perfRemote.t.push(Date.now());
+              __perfRemote.crop.push(t1 - t0);
+              __perfRemote.embed.push(t2 - t1);
+              __perfRemote.match.push(t3 - t2);
+              __perfRemote.dbSize.push(artworkDB.length || 0);
+              __perfRemote.dim.push(dbDim || 0);
+            }
+          } catch {}
 
           matched = matchedLocal;
         }

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, Body
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict, Any, Tuple
@@ -442,3 +442,39 @@ def _startup_refresh_cache():
         print(f"[ArtLens] Cache loaded from Supabase: artworks={a}, descriptors={d}, dim={db_dim}")
     except Exception as e:
         print(f"[ArtLens] Failed to load cache from Supabase at startup: {e}")
+
+
+
+# -----------------------------
+# Remote performance logging (Option B)
+# -----------------------------
+from typing import Dict as _DictAlias, Any as _AnyAlias
+
+@app.post("/log_perf")
+def log_perf(payload: _DictAlias[str, _AnyAlias] = Body(...)):
+    """Receive frontend perf batches and print summary to server logs.
+    Expected payload: { meta:{...}, data:{ t:[], crop:[], embed:[], match:[], dbSize:[], dim:[] }, sessionId, seq, reason }
+    """
+    try:
+        if not isinstance(payload, dict):
+            raise ValueError("payload must be a JSON object")
+        meta = payload.get("meta", {})
+        data = payload.get("data", {})
+        sess = payload.get("sessionId")
+        seq = payload.get("seq")
+        def _mean(arr):
+            try:
+                return float(sum(arr) / len(arr)) if isinstance(arr, list) and arr else 0.0
+            except Exception:
+                return 0.0
+        n = len(data.get("t", [])) if isinstance(data.get("t", []), list) else 0
+        mc = _mean(data.get("crop", []))
+        me = _mean(data.get("embed", []))
+        mm = _mean(data.get("match", []))
+        cfg = meta.get("config") if isinstance(meta, dict) else None
+        tfb = meta.get("tfBackend") if isinstance(meta, dict) else None
+        print(f"[PerfLog] session={sess} seq={seq} samples={n} mean(ms) crop={mc:.2f} embed={me:.2f} match={mm:.2f} backend={tfb} conf={cfg}")
+        return {"status": "ok", "accepted": int(n)}
+    except Exception as e:
+        print("[PerfLog] error processing payload:", e)
+        raise HTTPException(status_code=400, detail="invalid payload")
