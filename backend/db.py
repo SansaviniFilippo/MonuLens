@@ -1,7 +1,6 @@
 import os
 import time
 from sqlalchemy import create_engine, text
-from sqlalchemy.pool import NullPool
 from sqlalchemy.exc import OperationalError
 import logging
 
@@ -20,16 +19,16 @@ elif raw_url.startswith("postgresql://") and not raw_url.startswith("postgresql+
 else:
     DB_URL = raw_url
 
-# Configurazione ottimizzata per Transaction Pooler
+
 engine = create_engine(
     DB_URL,
-    poolclass=NullPool,  # Nessun pooling lato SQLAlchemy
-    echo=False,
-    # Configurazioni specifiche per psycopg3 e Transaction Pooler
-    connect_args={
-        "connect_timeout": 10,  # Timeout connessione più breve
-        "prepare_threshold": None
-    }
+    # Pool piccolo per non trattenere troppe connessioni lato PgBouncer
+    pool_size=3,
+    max_overflow=2,
+    # Verifica la connessione prima dell'uso (scarta connessioni morte)
+    pool_pre_ping=True,
+    # Ricicla connessioni periodicamente per evitare stalli
+    pool_recycle=300,  # secondi (5 min)
 )
 
 def run_with_retry(sql: str, params=None, max_retries=3, retry_delay=1):
