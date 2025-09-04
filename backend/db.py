@@ -13,12 +13,7 @@ logger = logging.getLogger(__name__)
 raw_url = os.environ["SUPABASE_DB_URL"]
 
 # Ensure SQLAlchemy uses psycopg v3 driver
-if raw_url.startswith("postgres://"):
-    DB_URL = "postgresql+psycopg://" + raw_url[len("postgres://"):]
-elif raw_url.startswith("postgresql://") and not raw_url.startswith("postgresql+psycopg://"):
-    DB_URL = "postgresql+psycopg://" + raw_url[len("postgresql://"):]
-else:
-    DB_URL = raw_url
+DB_URL = raw_url
 
 # Configurazione ottimizzata per Transaction Pooler
 engine = create_engine(
