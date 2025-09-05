@@ -40,6 +40,17 @@ def upsert_artwork_with_descriptors(data: Dict[str, Any]) -> Dict[str, Any]:
     observed_dim: Optional[int] = None
     for idx, vd in enumerate(descs):
         emb = vd.get("embedding")
+        # Accept both arrays and dicts with numeric keys (in case a TypedArray was JSON-serialized)
+        if isinstance(emb, dict):
+            try:
+                # Build list sorted by numeric key
+                numeric_items = sorted(
+                    ((int(k), v) for k, v in emb.items() if str(k).isdigit()),
+                    key=lambda kv: kv[0]
+                )
+                emb = [float(v) for _, v in numeric_items]
+            except Exception:
+                emb = None
         if isinstance(emb, list):
             norm = l2_normalize(emb)
             if observed_dim is None:

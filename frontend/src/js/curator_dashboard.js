@@ -65,8 +65,9 @@ async function onSubmit(e) {
       setStatus(`Calcolo embedding ${i+1}/${files.length}…`);
       const f = files[i];
       const can = await imageToCanvas224(f);
-      const embedding = embedFromCanvas(can); // already L2-normalized
-      visual_descriptors.push({ id: descriptorIdFor(f, i), embedding });
+      const embedding = embedFromCanvas(can); // already L2-normalized (Float32Array)
+      const embeddingArr = Array.from(embedding);
+      visual_descriptors.push({ id: descriptorIdFor(f, i), embedding: embeddingArr });
     }
 
     const payload = {
@@ -672,7 +673,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
         museum: ($('#md_museum').value || '').trim() || null,
         location: ($('#md_location').value || '').trim() || null,
         descriptions: buildDescriptions(),
-        visual_descriptors: pending.map(p=> ({ id: p.id, embedding: p.embedding }))
+        visual_descriptors: pending.map(p=> ({ id: p.id, embedding: Array.isArray(p.embedding) ? p.embedding : Array.from(p.embedding || []) }))
       };
       let token = '';
       try { token = localStorage.getItem('X_ADMIN_TOKEN') || ''; } catch{}

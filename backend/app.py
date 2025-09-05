@@ -341,6 +341,13 @@ def upsert_artwork(art: ArtworkUpsert, x_admin_token: str = Header(default="")):
             observed_dim = None
             for idx, vd in enumerate(vds):
                 emb = vd.get("embedding")
+                # Accept dicts with numeric keys (possible from bad TypedArray serialization)
+                if isinstance(emb, dict):
+                    try:
+                        items = sorted(((int(k), v) for k, v in emb.items() if str(k).isdigit()), key=lambda kv: kv[0])
+                        emb = [float(v) for _, v in items]
+                    except Exception:
+                        emb = None
                 if isinstance(emb, list):
                     vec = np.asarray(emb, dtype=np.float32)
                     vec = _l2_normalize(vec)
