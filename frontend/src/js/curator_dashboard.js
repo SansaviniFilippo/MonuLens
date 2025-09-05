@@ -539,7 +539,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
             <div id="md_file_list" class="file-list"></div>
             <div class="add-row">
               <button id="md_add_btn" class="add-btn" type="button">+ ${trm.add}</button>
-              <input id="md_hidden_file" type="file" accept="image/png,image/jpeg" multiple style="display:none" />
+              <input id="md_hidden_file" type="file" accept="image/*" multiple style="display:none" />
             </div>
           </div>
 
@@ -645,7 +645,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
     hiddenFile?.addEventListener('change', async ()=>{
       const files = Array.from(hiddenFile.files || []);
       if (!files.length) return;
-      addName.value = files[0].name;
+      if (addName) addName.value = files[0].name;
       await initEmbeddingModel();
       for (const f of files){
         const can = await imageToCanvas224(f);
@@ -682,6 +682,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
       try {
         const res = await fetch(`${BACKEND_URL}/artworks`, { method:'POST', headers:{ 'Content-Type':'application/json','X-Admin-Token': token}, body: JSON.stringify(payload)});
         if (!res.ok) throw new Error(await res.text());
+        try { await loadArtworkDB(); } catch (e) { console.warn('Reload DB after edit save failed:', e); }
         close();
         await loadCollection();
       } catch (err){
