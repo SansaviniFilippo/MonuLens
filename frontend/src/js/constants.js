@@ -2,7 +2,7 @@
 export const MODEL_URL = "models/last_model.tflite"; // path to tflite model relative to public/
 
 // Backend API base URL
-export const BACKEND_URL = (typeof window !== 'undefined' && window.BACKEND_URL) || "http://localhost:8000";
+export const BACKEND_URL = (typeof window !== 'undefined' && window.BACKEND_URL) || (location.origin + '/api');
 
 // Offscreen crop size for embeddings
 export const CROP_SIZE = 224; // MobileNet input size

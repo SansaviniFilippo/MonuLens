@@ -1,0 +1,25 @@
+# VCS / IDE / env
+.git
+.gitignore
+.idea
+.vscode
+.venv
+*.log
+
+# Node / Python cache
+node_modules
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Build and artifacts
+dist
+build
+coverage
+
+# Local env
+.env
+
+# Docker files themselves
+Dockerfile
+docker-compose.yml

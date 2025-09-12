@@ -533,16 +533,14 @@ function stopAll() {
 
   if (!scanBtn || !overlay || !frame || !closeBtn) return; // Not on homepage
 
-  function openScanner(){
-    if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-      alert('La fotocamera richiede HTTPS (oppure localhost). Apri la pagina con https://');
-      return;
+    function openScanner(){
+        // In produzione meglio HTTPS; in locale localhost va bene
+        if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+            alert('La fotocamera richiede HTTPS (oppure localhost). Apri la pagina con https://');
+            return;
+        }
+        location.href = 'scanner.html';
     }
-    try { frame.src = 'about:blank'; } catch {}
-    frame.src = 'scanner.html';
-    overlay.classList.add('on');
-    overlay.setAttribute('aria-hidden', 'false');
-  }
 
   function closeScanner(){
     overlay.classList.remove('on');

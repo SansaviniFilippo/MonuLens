@@ -1,0 +1,39 @@
+# docker-compose.yml (sviluppo / test locale)
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: artlens-backend
+    environment:
+      - SUPABASE_DB_URL=${SUPABASE_DB_URL}
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-}
+      - FRONTEND_ORIGINS=${FRONTEND_ORIGINS:-http://localhost:8080,http://127.0.0.1:8080}
+      - ENABLE_DISK_CACHE=${ENABLE_DISK_CACHE:-true}
+      # - DISK_CACHE_PATH=/tmp/artlens_cache.json
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: artlens-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+# Nota: nessuna chiave "version" (deprecata in Compose v2)
