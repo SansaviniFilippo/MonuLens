@@ -58,13 +58,10 @@
   </div>
 
   <script>
-      if (!window.BACKEND_URL) {
-          const isLocalhost = location.hostname === "localhost" || location.hostname === "127.0.0.1";
-          window.BACKEND_URL = isLocalhost
-              ? "/api"  // backend locale
-              : "artlens-production-a8a7.up.railway.app"; // backend produzione
-      }
+      // Sostituisci DOPO il deploy con l’URL reale del backend Railway
+      window.BACKEND_URL = window.BACKEND_URL || 'artlens-production-a8a7.up.railway.app';
   </script>
+
   <script type="module" src="../src/js/index.js"></script>
 </body>
 </html>
