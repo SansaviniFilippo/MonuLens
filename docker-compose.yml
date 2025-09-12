@@ -3,7 +3,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: backend/Dockerfile
+      dockerfile: Dockerfile
     container_name: artlens-backend
     environment:
       - SUPABASE_DB_URL=${SUPABASE_DB_URL}
