@@ -4,8 +4,9 @@ ArtLens è un sistema di riconoscimento opere d’arte composto da:
 - un frontend web che usa la fotocamera del dispositivo, rileva il quadro nella scena (MediaPipe ObjectDetector), produce un embedding visivo (TensorFlow.js + MobileNet) e fa il matching lato client;
 - un backend FastAPI che espone il catalogo e i descrittori, oltre a endpoint amministrativi per inserire/aggiornare opere e descrittori nel database (Postgres/Supabase).
 
-Questo README spiega come avviare il progetto in locale, come usarlo e come funziona la pipeline.
-
+## Deployment
+- frontend su [Render](https://artlens-frontend.onrender.com)
+- backend su [Railway](https://artlens-production-a8a7.up.railway.app)
 
 ## Contenuti
 - Panoramica e architettura
@@ -37,7 +38,39 @@ Questo README spiega come avviare il progetto in locale, come usarlo e come funz
   - Cache in memoria dei dati per risposte rapide; opzionale persistenza su disco.
 
 
-## Requisiti
+## Esecuzione locale con Docker (consigliato)
+Prerequisiti:
+- Docker Desktop (o Colima/OrbStack) installato e in esecuzione
+
+1) Crea un file `.env` nella root del progetto (non committare credenziali reali):
+```
+SUPABASE_DB_URL=postgresql://<user>:<pass>@<host>:5432/<db>?sslmode=require
+ADMIN_TOKEN=artlens_admin
+FRONTEND_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
+ENABLE_DISK_CACHE=true
+```
+
+2) Avvia lo stack con Docker Compose:
+```
+docker compose up -d --build
+```
+- Frontend: http://localhost:8080
+- Backend:  http://localhost:8000/health
+- Proxy API: http://localhost:8080/api/health (passa da Nginx del frontend → backend)
+
+Note importanti:
+- Il frontend è servito da Nginx (frontend/nginx.conf). Le API sono esposte come `/api/...` e inoltrate al servizio `backend:8000`, così non serve CORS in locale.
+- Il valore `ADMIN_TOKEN` del backend deve corrispondere a quello usato dal frontend per le operazioni admin (vedi sezione Dashboard). 
+- Se vedi problemi di cache del browser dopo un rebuild del frontend, usa Hard Reload (Ctrl/Cmd+Shift+R).
+
+Troubleshooting rapido:
+- Docker non parte → avvia Docker Desktop. `docker info` deve funzionare.
+- 401 sugli endpoint admin → controlla che l’header X-Admin-Token inviato dal frontend coincida con `ADMIN_TOKEN` nel `.env`.
+- CORS in locale → assicurati di usare `/api` (default del frontend) e non un dominio esterno.
+
+---
+
+## Requisiti (metodo alternativo, senza Docker)
 - Python 3.10+ (consigliato 3.11)
 - Node.js non necessario; basta un server statico semplice (anche Python http.server) per servire il frontend
 - Un database Postgres raggiungibile (es. Supabase) e la sua connection string
@@ -108,7 +141,7 @@ Nota: su dispositivi mobili la fotocamera richiede HTTPS; per demo locale usare 
 - Dashboard: curator_dashboard.html
   1. Carica una o più immagini dell’opera.
   2. Inserisci metadati (titolo, artista, anno, museo, location) e descrizioni (IT/EN).
-  3. Al salvataggio, il browser calcola gli embedding (224×224, L2) e invia un JSON a POST /artworks con header X-Admin-Token (ti verrà chiesto al primo salvataggio e verrà ricordato in localStorage).
+  3. Al salvataggio, il browser calcola gli embedding (224×224, L2) e invia un JSON a POST /artworks con header X-Admin-Token impostato automaticamente dal frontend (nessun prompt). Assicurati che corrisponda a `ADMIN_TOKEN` sul backend.
   4. Il backend salva metadati + descrittori nel DB e aggiorna la cache; il frontend ricarica il DB.
   5. Se serve, usa la tab “Manage Collection” per consultare e gestire la collezione (richiede le API attive; include azioni come fetch dettagli /artworks/{id} e delete).
 
@@ -194,7 +227,6 @@ Note:
   - Imposta window.BACKEND_URL in scanner.html/curator_dashboard.html per specificare l’URL backend (default http://localhost:8000).
   - Modello TFLite: public/models/last_model.tflite. Puoi aggiornarlo sostituendo il file; assicurati coerenza con il tipo di oggetti da rilevare.
   - Parametri: vedi src/js/constants.js (COSINE_THRESHOLD, MIN_BOX_SCORE, CROP_SIZE, ecc.).
-
 
 ## Troubleshooting
 - La fotocamera non parte:
