@@ -2,8 +2,13 @@ import { initEmbeddingModel, embedFromCanvas } from './embedding.js';
 import { BACKEND_URL, CROP_SIZE } from './constants.js';
 import { getLang, loadArtworkDB } from './db.js';
 
+const ADMIN_TOKEN_FIXED = 'artlens_admin';
+
 const submitBtn = document.getElementById('submitBtn');
 const statusEl = document.getElementById('statusMsg');
+
+
+
 function setStatus(msg) {
   if (statusEl) statusEl.textContent = msg || '';
 }
@@ -80,19 +85,13 @@ async function onSubmit(e) {
       visual_descriptors,
     };
 
-    // Token admin
-    const defaultToken = (typeof localStorage !== 'undefined' ? localStorage.getItem('X_ADMIN_TOKEN') : '') || '';
-    let token = defaultToken || '';
-    if (!token) token = prompt('Inserisci X-Admin-Token') || '';
-    if (!token) { alert('Token mancante. Operazione annullata.'); return; }
-    try { if (localStorage) localStorage.setItem('X_ADMIN_TOKEN', token); } catch {}
-
+    // Invia sempre il token admin fisso (niente più prompt)
     setStatus('Salvataggio in corso…');
     const res = await fetch(`${BACKEND_URL}/artworks`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Admin-Token': token
+        'X-Admin-Token': ADMIN_TOKEN_FIXED
       },
       body: JSON.stringify(payload)
     });
@@ -452,12 +451,8 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
         if (!id) return;
         const trm = (I18N[getLang()] || I18N.it).manage;
         if (!confirm(trm.confirmDeleteArtwork)) return;
-        let token = '';
-        try { token = localStorage.getItem('X_ADMIN_TOKEN') || ''; } catch{}
-        if (!token) token = prompt(trm.tokenPrompt) || '';
-        if (!token) return;
         try {
-          const resp = await fetch(`${BACKEND_URL}/artworks/${encodeURIComponent(id)}`, { method:'DELETE', headers: { 'X-Admin-Token': token }});
+          const resp = await fetch(`${BACKEND_URL}/artworks/${encodeURIComponent(id)}`, { method:'DELETE', headers: { 'X-Admin-Token': ADMIN_TOKEN_FIXED }});
           if (!resp.ok) {
             const t = await resp.text();
             throw new Error(`${resp.status} ${t}`);
@@ -609,12 +604,8 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
           `<button class="file-del" type="button" title="${trm.delete}">${iconTrash()}</button>`;
         row.querySelector('.file-del').addEventListener('click', async ()=>{
           if (!confirm(trm.deleteImageConfirm(d.descriptor_id))) return;
-          let token = '';
-          try { token = localStorage.getItem('X_ADMIN_TOKEN') || ''; } catch{}
-          if (!token) token = prompt(trm.tokenPrompt) || '';
-          if (!token) return;
           try {
-            const resp = await fetch(`${BACKEND_URL}/artworks/${encodeURIComponent(artId)}/descriptors/${encodeURIComponent(d.descriptor_id)}`, { method:'DELETE', headers:{'X-Admin-Token': token}});
+            const resp = await fetch(`${BACKEND_URL}/artworks/${encodeURIComponent(artId)}/descriptors/${encodeURIComponent(d.descriptor_id)}`, { method:'DELETE', headers:{'X-Admin-Token': ADMIN_TOKEN_FIXED}});
             if (!resp.ok) throw new Error(await resp.text());
             const idx = existing.findIndex(x=> x.descriptor_id === d.descriptor_id);
             if (idx >= 0) existing.splice(idx,1);
@@ -675,12 +666,8 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
         descriptions: buildDescriptions(),
         visual_descriptors: pending.map(p=> ({ id: p.id, embedding: Array.isArray(p.embedding) ? p.embedding : Array.from(p.embedding || []) }))
       };
-      let token = '';
-      try { token = localStorage.getItem('X_ADMIN_TOKEN') || ''; } catch{}
-      if (!token) token = prompt('Enter X-Admin-Token') || '';
-      if (!token) return;
       try {
-        const res = await fetch(`${BACKEND_URL}/artworks`, { method:'POST', headers:{ 'Content-Type':'application/json','X-Admin-Token': token}, body: JSON.stringify(payload)});
+        const res = await fetch(`${BACKEND_URL}/artworks`, { method:'POST', headers:{ 'Content-Type':'application/json','X-Admin-Token': ADMIN_TOKEN_FIXED}, body: JSON.stringify(payload)});
         if (!res.ok) throw new Error(await res.text());
         try { await loadArtworkDB(); } catch (e) { console.warn('Reload DB after edit save failed:', e); }
         close();
