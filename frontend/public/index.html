@@ -58,7 +58,15 @@
   </div>
 
 
-  <script>window.BACKEND_URL='https://artlens-production-a8a7.up.railway.app';</script>
+  <script>
+      if (!window.BACKEND_URL) {
+          const isLocalhost = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+          window.BACKEND_URL = isLocalhost
+              ? "/api"  // backend locale
+              : "https://artlens-production-a8a7.up.railway.app"; // backend produzione
+      }
+  </script>
+
   <script type="module" src="../src/js/index.js"></script>
 </body>
 </html>

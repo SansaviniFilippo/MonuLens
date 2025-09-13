@@ -100,7 +100,15 @@
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0"></script>
 
-  <script>window.BACKEND_URL='https://artlens-production-a8a7.up.railway.app';</script>
+  <script>
+      if (!window.BACKEND_URL) {
+      const isLocalhost = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+      window.BACKEND_URL = isLocalhost
+          ? "/api"  // backend locale
+          : "https://artlens-production-a8a7.up.railway.app"; // backend produzione
+  }
+  </script>
+
   <script type="module" src="../src/js/curator_dashboard.js"></script>
 </body>
 </html>
