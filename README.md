@@ -8,22 +8,6 @@ ArtLens è un sistema di riconoscimento opere d’arte composto da:
 - frontend su [Render](https://artlens-frontend.onrender.com)
 - backend su [Railway](https://artlens-production-a8a7.up.railway.app)
 
-## Contenuti
-- Panoramica e architettura
-- Requisiti
-- Setup e avvio
-  - Backend (FastAPI)
-  - Frontend (static server)
-- Utilizzo
-  - Utente (Scanner)
-  - Curatore (Dashboard)
-- API del backend
-- Schema DB atteso (SQL di esempio)
-- Come funziona (dettagli tecnici)
-- Configurazione
-- Troubleshooting
-
-
 ## Panoramica e architettura
 - Frontend (frontend/public):
   - index.html: landing con pulsanti “Scan Artwork” e “Curator Login”.
@@ -36,7 +20,6 @@ ArtLens è un sistema di riconoscimento opere d’arte composto da:
   - FastAPI con endpoint pubblici per catalogo e descrittori e endpoint admin per upsert/cancellazione.
   - Connessione a Postgres (Supabase) via SQLAlchemy.
   - Cache in memoria dei dati per risposte rapide; opzionale persistenza su disco.
-
 
 ## Esecuzione locale con Docker (consigliato)
 Prerequisiti:
