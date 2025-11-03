@@ -23,17 +23,12 @@
           </div>
         </div>
       </div>
-      <header class="brand" aria-label="Museum brand">
-        <!-- Column icon -->
-        <svg class="mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M3 8h18v2H3V8zm2 3h3v7H5v-7zm5 0h4v7h-4v-7zm6 0h3v7h-3v-7zM4 6l8-4 8 4H4z" opacity=".3"/>
-          <path d="M2 20h20v2H2z"/>
-        </svg>
-        <div class="word">MUSEUM</div>
+      <header class="brand" aria-label="Logo">
+        <img class="mark" src="images/liberty_statue.png" alt="Logo" />
       </header>
 
-      <h1 id="t" class="title">ArtLens</h1>
-      <p class="subtitle">Discover art through technology</p>
+      <h1 id="t" class="title">MonuLens</h1>
+      <p class="subtitle">Discover monuments through technology</p>
 
       <div class="actions">
         <button id="scanBtn" class="btn btn-primary" type="button">
@@ -61,9 +56,7 @@
   <script>
       if (!window.BACKEND_URL) {
           const isLocalhost = location.hostname === "localhost" || location.hostname === "127.0.0.1";
-          window.BACKEND_URL = isLocalhost
-              ? "/api"  // backend locale
-              : "https://artlens-production-a8a7.up.railway.app"; // backend produzione
+          window.BACKEND_URL = "/api";
       }
   </script>
 

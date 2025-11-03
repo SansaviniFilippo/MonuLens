@@ -1,13 +1,13 @@
 :root {
-  --bg: #f5f9ff;
-  --card-bg: #ffffff;
-  --ink: #0f1b2d;
-  --muted: #60708a;
-  --primary: #0f49e0; /* CTA blue (slightly darker) */
-  --primary-ink: #ffffff;
-  --accent: #ff9c07;  /* orange outline */
-  --radius-card: 28px;
-  --shadow-card: 0 22px 60px rgba(31,55,97,0.18), 0 2px 6px rgba(31,55,97,0.10);
+  --bg: #f4f8fc;
+    --card-bg: #ffffff;
+    --ink: #0f1b2d;
+    --muted: #60708a;
+    --primary: #4a7ebb; /* nuovo blu medio elegante */
+    --primary-ink: #ffffff;
+    --accent: #1f3a63;  /* blu profondo come bordo o dettaglio */
+    --radius-card: 28px;
+    --shadow-card: 0 22px 60px rgba(31,55,97,0.18), 0 2px 6px rgba(31,55,97,0.10);
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
@@ -39,8 +39,13 @@ body {
   filter: blur(14px);
 }
 .brand { text-align: center; margin-bottom: clamp(18px, 3.6vw, 30px); }
-.brand .mark { width: 54px; height: 54px; margin: 0 auto 0px; color: #c1b189; }
-.brand .word { font: 600 16px/1 Inter, system-ui; letter-spacing: 3px; color: #b9c2cf; }
+.brand .mark {
+    display: block;
+    width: 54px;
+    height: 54px;
+    margin: 0 auto;
+    object-fit: contain;
+}
 
 h1.title {
   font: 600 clamp(38px, 5.8vw, 54px)/1.1 "Cormorant Garamond", Georgia, serif;
@@ -62,8 +67,8 @@ p.subtitle {
 .btn-primary { background: var(--primary); color: var(--primary-ink); box-shadow: 0 10px 24px rgba(18,33,55,0.16), 0 1px 0 rgba(255,255,255,0.35) inset; }
 .btn-primary:hover { filter: brightness(0.98); box-shadow: 0 12px 28px rgba(21,87,255,0.30); }
 
-.btn-outline { background: #fff; color: #c25c00; border: 3px solid var(--accent); box-shadow: 0 10px 22px rgba(18,33,55,0.10); }
-.btn-outline:hover { background: #fff7eb; }
+.btn-outline { background: #fff; color: #1f3a63; border: 3px solid var(--accent); box-shadow: 0 10px 22px rgba(31,58,99,0.10); }
+.btn-outline:hover { background: linear-gradient(180deg, #f4f8fc, #e4eef9); box-shadow: 0 12px 26px rgba(31,58,99,0.2); }
 
 .divider { height: 1px; background: rgba(15,27,45,0.08); margin: clamp(8px, 2.6vw, 20px) 0; border-radius: 1px; }
 
@@ -96,7 +101,7 @@ p.subtitle {
 .card{ overflow: hidden; }
 .langbar {
   /* golden gradient: from-amber-500 to-amber-600 */
-  background: linear-gradient(90deg, #f59e0b, #d97706);
+  background: linear-gradient(90deg, #a8c5e2, #4a7ebb);
   border-radius: calc(var(--radius-card) - 2px) calc(var(--radius-card) - 2px) 0 0;
   /* extend to card edges by canceling card padding (same clamp values) */
   margin: calc(-1 * clamp(24px, 5.2vw, 56px)) calc(-1 * clamp(20px, 5vw, 52px)) 20px;
@@ -120,8 +125,8 @@ p.subtitle {
   gap: 4px;
   padding: 4px;
   border-radius: 9999px;
-  background: linear-gradient(180deg, rgba(253, 230, 138, 0.32), rgba(217, 119, 6, 0.42));
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22), 0 10px 24px rgba(217,119,6,0.25);
+  background: linear-gradient(180deg, rgba(168, 197, 226, 0.3), rgba(31, 58, 99, 0.5));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22), 0 10px 24px rgba(31,58,99,0.25);
 }
 .langbar .lang-toggle button {
   appearance: none;
@@ -138,8 +143,9 @@ p.subtitle {
 }
 .langbar .lang-toggle button.active {
   background: #ffffff;
-  color: #b45309; /* amber-700 */
-  box-shadow: 0 8px 18px rgba(217,119,6,0.28), inset 0 1px 0 rgba(255,255,255,0.9);
+  color: #1f3a63;
+  box-shadow: 0 8px 18px rgba(31,58,99,0.3),
+  inset 0 1px 0 rgba(255,255,255,0.9);
 }
 .langbar .lang-toggle button:hover:not(.active) { opacity: 0.9; }
 .langbar .lang-toggle button:focus-visible { outline: 2px solid rgba(255,255,255,0.85); outline-offset: 2px; }
