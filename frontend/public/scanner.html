@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>ArtLens — Scanner</title>
+  <link href="https://cdn.jsdelivr.net/npm/ol@v9.1.0/ol.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/ol@v9.1.0/dist/ol.js"></script>
   <link rel="stylesheet" href="styles/variables.css" />
   <link rel="stylesheet" href="styles/base.css" />
   <link rel="stylesheet" href="styles/animations.css" />
@@ -66,6 +68,9 @@
         <div class="detail-sep" role="separator" aria-hidden="true"></div>
         <div class="row"><span class="chip">Description</span></div>
         <div class="detail-body" id="detailBody"></div>
+        <div class="detail-sep" role="separator" aria-hidden="true"></div>
+        <div class="row"><span class="chip">Mappa</span></div>
+        <div id="detailMap" class="detail-map" style="height:220px; border-radius:12px; overflow:hidden; margin-top:8px;"></div>
       </div>
     </div>
 
@@ -82,5 +87,16 @@
   </script>
 
   <script type="module" src="../src/js/index.js"></script>
+
+  <!-- DEBUG BUTTON (solo per sviluppo, puoi rimuoverlo in produzione)
+  <button id="debugDetailBtn"
+          style="position:fixed;bottom:20px;right:20px;z-index:9999;
+               background:#007aff;color:white;border:none;
+               padding:10px 14px;border-radius:8px;
+               font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.25);">
+      🔍 Test Detail
+  </button>
+  -->
+
 </body>
 </html>

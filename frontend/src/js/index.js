@@ -261,6 +261,9 @@ function openDetail(entry, confidence) {
 
   const desc = entry?.descriptions ? (pickLangText(entry.descriptions) || '') : (entry?.description || '');
   if (detailBodyEl) detailBodyEl.textContent = desc;
+
+  initDetailMap(entry.location_coords, userCoords);
+
   if (detailEl) {
     detailEl.classList.remove('hidden', 'closing');
     // Force reflow to ensure animation restarts
@@ -275,6 +278,95 @@ function openDetail(entry, confidence) {
   running = false;
   try { const ctx = canvasEl.getContext('2d'); ctx.clearRect(0, 0, canvasEl.width, canvasEl.height); } catch {}
 }
+
+// === MAPPA STATIC ===
+function initDetailMap(geojson, userCoords) {
+  const mapEl = document.getElementById("detailMap");
+  if (!mapEl) return;
+
+  // Se c'è già una mappa, distruggila
+  if (window.detailMapInstance) {
+    try { window.detailMapInstance.setTarget(null); } catch {}
+    window.detailMapInstance = null;
+  }
+
+  // Crea nuova mappa
+  const map = new ol.Map({
+    target: mapEl,
+    layers: [new ol.layer.Tile({ source: new ol.source.OSM() })],
+    view: new ol.View({
+      center: ol.proj.fromLonLat([12.4924, 41.8902]), // Default Roma
+      zoom: 15,
+    }),
+    controls: [],
+    interactions: [],
+  });
+  window.detailMapInstance = map;
+
+  // Layer per il monumento e l'utente
+  const vectorSrc = new ol.source.Vector();
+  const vectorLayer = new ol.layer.Vector({ source: vectorSrc });
+  map.addLayer(vectorLayer);
+
+  // Mostra poligono/punto monumento
+  if (geojson) {
+    try {
+      const g = typeof geojson === 'string' ? JSON.parse(geojson) : geojson;
+      if (g.type === "Polygon" && g.coordinates?.[0]) {
+        const coords = g.coordinates[0].map(([lon, lat]) => ol.proj.fromLonLat([lon, lat]));
+        const polygon = new ol.geom.Polygon([coords]);
+        const feature = new ol.Feature(polygon);
+        feature.setStyle(new ol.style.Style({
+          stroke: new ol.style.Stroke({ color: "#d91c1c", width: 2 }),
+          fill: new ol.style.Fill({ color: "rgba(217,28,28,0.2)" }),
+        }));
+        vectorSrc.addFeature(feature);
+        map.getView().fit(polygon, { padding: [20, 20, 20, 20] });
+      }
+      else if (g.type === "Point" && g.coordinates) {
+        const [lon, lat] = g.coordinates;
+        const point = new ol.geom.Point(ol.proj.fromLonLat([lon, lat]));
+        const feature = new ol.Feature(point);
+        feature.setStyle(new ol.style.Style({
+          image: new ol.style.Circle({
+            radius: 6,
+            fill: new ol.style.Fill({ color: "#d91c1c" }),
+            stroke: new ol.style.Stroke({ color: "#fff", width: 2 }),
+          }),
+        }));
+        vectorSrc.addFeature(feature);
+        map.getView().setCenter(ol.proj.fromLonLat([lon, lat]));
+      }
+    } catch (e) {
+      console.warn("Invalid GeoJSON:", e);
+    }
+  }
+
+  // Mostra punto utente
+  if (userCoords?.lon && userCoords?.lat) {
+    const point = new ol.geom.Point(ol.proj.fromLonLat([userCoords.lon, userCoords.lat]));
+    const feature = new ol.Feature(point);
+    feature.setStyle(new ol.style.Style({
+      image: new ol.style.Circle({
+        radius: 6,
+        fill: new ol.style.Fill({ color: "#007aff" }),
+        stroke: new ol.style.Stroke({ color: "#fff", width: 2 }),
+      }),
+    }));
+    vectorSrc.addFeature(feature);
+  }
+
+  setTimeout(() => {
+      if (window.detailMapInstance) {
+          window.detailMapInstance.updateSize();
+          const view = window.detailMapInstance.getView();
+          view.animate({ duration: 500, zoom: view.getZoom() }); // forza il re-render
+      }
+  }, 500);
+
+
+}
+
 
 function closeDetail() {
   if (detailEl) {
@@ -586,3 +678,38 @@ function stopAll() {
     }
   });
 })();
+
+/*
+
+// === DEBUG DETAIL BUTTON ===
+document.getElementById("debugDetailBtn")?.addEventListener("click", () => {
+  if (typeof openDetail !== "function") {
+    console.warn("⚠️ openDetail non è ancora disponibile. Attendi che la pagina finisca di caricare.");
+    return;
+  }
+
+  const fakeEntry = {
+    title: "Fontana di Trevi",
+    artist: "Nicola Salvi",
+    year: "1732",
+    description: "Una delle fontane più celebri di Roma, completata da Giuseppe Pannini.",
+    // 📍 Poligono (centro di Roma)
+    location_coords: JSON.stringify({
+      type: "Polygon",
+      coordinates: [
+        [
+          [12.4833, 41.9009],
+          [12.4842, 41.9010],
+          [12.4840, 41.9004],
+          [12.4833, 41.9009]
+        ]
+      ]
+    })
+  };
+
+  // Mostra la scheda di dettaglio con la mappa
+  openDetail(fakeEntry, 0.99);
+});
+
+
+ */
