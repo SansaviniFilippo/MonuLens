@@ -73,15 +73,14 @@ def upsert_artwork_with_descriptors(data: Dict[str, Any]) -> Dict[str, Any]:
     # Upsert artwork metadata (single query)
     run(
         """
-        insert into artworks (id, title, artist, year, museum, location, descriptions, updated_at)
-        values (:id, :title, :artist, :year, :museum, :location, cast(:descriptions as jsonb), now())
+        insert into artworks (id, title, artist, year, descriptions, location_coords, updated_at)
+        values (:id, :title, :artist, :year, cast(:descriptions as jsonb), cast(:location_coords as jsonb), now())
             on conflict (id) do update set
             title = excluded.title,
                                     artist = excluded.artist,
                                     year = excluded.year,
-                                    museum = excluded.museum,
-                                    location = excluded.location,
                                     descriptions = excluded.descriptions,
+                                    location_coords = excluded.location_coords,
                                     updated_at = now()
         """,
         {
@@ -89,9 +88,8 @@ def upsert_artwork_with_descriptors(data: Dict[str, Any]) -> Dict[str, Any]:
             "title": data.get("title"),
             "artist": data.get("artist"),
             "year": data.get("year"),
-            "museum": data.get("museum"),
-            "location": data.get("location"),
             "descriptions": json.dumps(data.get("descriptions") or {}),
+            "location_coords": json.dumps(data.get("location_coords") or {}),
         },
     )
 
