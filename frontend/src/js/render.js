@@ -330,10 +330,11 @@ function drawCapsuleLabel(ctx, x, y, text, badge) {
 }
 
 function findBestMatch(embedding) {
-  if (!artworkDB.length || !embedding || typeof embedding.length !== 'number') return null;
+  if (!artworkDB.length || !embedding || typeof embedding.length !== 'number')
+    return null;
 
-  // --- 👇 AGGIUNTA: FILTRO GEOLOCALIZZATO ---
-  const RADIUS_KM = 0.5; // puoi regolare il raggio
+  // --- FILTRO GEOLOCALIZZATO ---
+  const RADIUS_KM = 0.5;
   const user = window.userCoords;
   let candidates = artworkDB;
 
@@ -345,22 +346,26 @@ function findBestMatch(embedding) {
   }
 
   if (!candidates.length) return null;
-  // --- 👆 FINE AGGIUNTA ---
+  // --- FINE FILTRO ---
 
-  const N = artworkDB.length;
   const dim = embedding.length;
   let bestIdx = -1;
   let bestSim = -1.0;
-  for (let i = 0; i < N; i++) {
-    const e = artworkDB[i];
+
+  for (let i = 0; i < candidates.length; i++) {
+    const e = candidates[i];
     const vec = e && e.embedding;
     if (!vec || vec.length !== dim) continue;
     let s = 0.0;
     for (let j = 0; j < dim; j++) s += embedding[j] * vec[j];
-    if (s > bestSim) { bestSim = s; bestIdx = i; }
+
+    if (s > bestSim) {
+      bestSim = s;
+      bestIdx = i;
+    }
   }
   if (bestIdx < 0) return null;
-  const entry = artworkDB[bestIdx];
+  const entry = candidates[bestIdx];
   return { entry, confidence: bestSim };
 }
 
