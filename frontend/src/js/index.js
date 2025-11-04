@@ -279,7 +279,6 @@ function openDetail(entry, confidence) {
   try { const ctx = canvasEl.getContext('2d'); ctx.clearRect(0, 0, canvasEl.width, canvasEl.height); } catch {}
 }
 
-// === MAPPA STATIC ===
 function initDetailMap(geojson, userCoords) {
   const mapEl = document.getElementById("detailMap");
   if (!mapEl) return;
@@ -295,7 +294,7 @@ function initDetailMap(geojson, userCoords) {
     target: mapEl,
     layers: [new ol.layer.Tile({ source: new ol.source.OSM() })],
     view: new ol.View({
-      center: ol.proj.fromLonLat([12.4924, 41.8902]), // Default Roma
+      center: ol.proj.fromLonLat([12.4924, 41.8902]), // Roma default
       zoom: 15,
     }),
     controls: [],
@@ -303,12 +302,13 @@ function initDetailMap(geojson, userCoords) {
   });
   window.detailMapInstance = map;
 
-  // Layer per il monumento e l'utente
   const vectorSrc = new ol.source.Vector();
   const vectorLayer = new ol.layer.Vector({ source: vectorSrc });
   map.addLayer(vectorLayer);
 
-  // Mostra poligono/punto monumento
+  const extentFeatures = []; // 👈 raccogliamo le geometrie per calcolare il bounding box totale
+
+  // === Monumento ===
   if (geojson) {
     try {
       const g = typeof geojson === 'string' ? JSON.parse(geojson) : geojson;
@@ -321,9 +321,8 @@ function initDetailMap(geojson, userCoords) {
           fill: new ol.style.Fill({ color: "rgba(217,28,28,0.2)" }),
         }));
         vectorSrc.addFeature(feature);
-        map.getView().fit(polygon, { padding: [20, 20, 20, 20] });
-      }
-      else if (g.type === "Point" && g.coordinates) {
+        extentFeatures.push(feature);
+      } else if (g.type === "Point" && g.coordinates) {
         const [lon, lat] = g.coordinates;
         const point = new ol.geom.Point(ol.proj.fromLonLat([lon, lat]));
         const feature = new ol.Feature(point);
@@ -335,14 +334,14 @@ function initDetailMap(geojson, userCoords) {
           }),
         }));
         vectorSrc.addFeature(feature);
-        map.getView().setCenter(ol.proj.fromLonLat([lon, lat]));
+        extentFeatures.push(feature);
       }
     } catch (e) {
       console.warn("Invalid GeoJSON:", e);
     }
   }
 
-  // Mostra punto utente
+  // === Punto utente ===
   if (userCoords?.lon && userCoords?.lat) {
     const point = new ol.geom.Point(ol.proj.fromLonLat([userCoords.lon, userCoords.lat]));
     const feature = new ol.Feature(point);
@@ -354,18 +353,28 @@ function initDetailMap(geojson, userCoords) {
       }),
     }));
     vectorSrc.addFeature(feature);
+    extentFeatures.push(feature);
   }
 
+  // === Adatta la vista all'insieme di tutte le geometrie ===
+  if (extentFeatures.length > 0) {
+    const extent = ol.extent.createEmpty();
+    extentFeatures.forEach(f => ol.extent.extend(extent, f.getGeometry().getExtent()));
+    map.getView().fit(extent, {
+      padding: [40, 40, 40, 40],
+      maxZoom: 17,
+      duration: 600,
+    });
+  }
+
+  // Aggiorna dimensione mappa dopo un breve delay
   setTimeout(() => {
-      if (window.detailMapInstance) {
-          window.detailMapInstance.updateSize();
-          const view = window.detailMapInstance.getView();
-          view.animate({ duration: 500, zoom: view.getZoom() }); // forza il re-render
-      }
-  }, 500);
-
-
+    if (window.detailMapInstance) {
+      window.detailMapInstance.updateSize();
+    }
+  }, 400);
 }
+
 
 
 function closeDetail() {
