@@ -30,41 +30,65 @@ try {
 } catch {}
 
 
-
-function haversineDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371; // raggio Terra in km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1 * Math.PI / 180) *
-    Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(a));
-}
-
 function geojsonHasNearbyPoint(geojson, user, radiusKm = 1.0) {
   if (!geojson || !geojson.type || !user?.lat || !user?.lon) return false;
-  const checkPoint = (coords) => {
-    if (!Array.isArray(coords) || coords.length < 2) return false;
-    const [lon, lat] = coords;
-    const dist = haversineDistance(user.lat, user.lon, lat, lon);
-    return dist <= radiusKm;
+
+  // --- Funzione distanza Haversine (km)
+  const haversineDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(lat1 * Math.PI / 180) *
+      Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(a));
+  };
+
+  // --- Distanza minima tra punto utente e un insieme di coordinate
+  const minDistanceToCoords = (coords) => {
+    let minDist = Infinity;
+    for (const [lon, lat] of coords) {
+      const d = haversineDistance(user.lat, user.lon, lat, lon);
+      if (d < minDist) minDist = d;
+    }
+    return minDist;
+  };
+
+  // --- Verifica se un punto è dentro un poligono (Ray casting)
+  const pointInPolygon = (point, polygonCoords) => {
+    const [lon, lat] = point;
+    const ring = polygonCoords[0];
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [xi, yi] = ring[i];
+      const [xj, yj] = ring[j];
+      const intersect =
+        ((yi > lat) !== (yj > lat)) &&
+        (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+      if (intersect) inside = !inside;
+    }
+    return inside;
   };
 
   switch (geojson.type) {
-    case 'Point':
-      return checkPoint(geojson.coordinates);
-    case 'MultiPoint':
-      return geojson.coordinates.some(checkPoint);
-    case 'FeatureCollection':
-      return geojson.features?.some(f => f.geometry?.type === 'Point' && checkPoint(f.geometry.coordinates));
-    case 'Feature':
-      if (geojson.geometry?.type === 'Point')
-        return checkPoint(geojson.geometry.coordinates);
-      break;
+    case "Point": {
+      const [lon, lat] = geojson.coordinates;
+      const dist = haversineDistance(user.lat, user.lon, lat, lon);
+      return dist <= radiusKm;
+    }
+
+    case "Polygon": {
+      const inside = pointInPolygon([user.lon, user.lat], geojson.coordinates);
+      if (inside) return true;
+      const minDist = minDistanceToCoords(geojson.coordinates[0]);
+      return minDist <= radiusKm;
+    }
+
+    default:
+      return false;
   }
-  return false;
 }
 
 
