@@ -51,9 +51,9 @@ function getI18n(lang) {
       },
       // Homepage strings
       home: {
-        subtitle: "Scopri i monumenti della tua città",
+        subtitle: "Scopri i monumenti di Forlì",
         scan: "Scansiona Monumento",
-        curator: "Accesso Curatore",
+        curator: "Accesso Gestore",
         foot: "Basato su un sistema di riconoscimento AI",
       }
     },
@@ -75,9 +75,9 @@ function getI18n(lang) {
         close: "Close"
       },
       home: {
-        subtitle: "Discover your city's monuments",
+        subtitle: "Discover the monuments of Forlì",
         scan: "Scan Monument",
-        curator: "Curator Login",
+        curator: "Manager Login",
         foot: "Powered by AI recognition system",
       }
     }
@@ -651,7 +651,7 @@ function stopAll() {
   const curatorBtn = document.getElementById('curatorBtn');
 
   if (curatorBtn) {
-    curatorBtn.addEventListener('click', () => { location.href = './curator_access.html'; });
+    curatorBtn.addEventListener('click', () => { location.href = './manager_access.html'; });
   }
 
   if (!scanBtn || !overlay || !frame || !closeBtn) return; // Not on homepage

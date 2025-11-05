@@ -8,10 +8,10 @@ import { getLang, setLang } from './db.js';
   const I18N = {
     it: {
       back: 'Indietro',
-      title: 'Accesso Curatore',
-      subtitle: 'Accedi per gestire la collezione di opere',
+      title: 'Accesso Gestore',
+      subtitle: 'Accedi per gestire l\'archivio dei monumenti',
       emailLabel: 'Email',
-      emailPh: 'curator@museum.com',
+      emailPh: 'manager@archive.com',
       passLabel: 'Password',
       passPh: 'Inserisci la password',
       signIn: 'Accedi',
@@ -21,10 +21,10 @@ import { getLang, setLang } from './db.js';
     },
     en: {
       back: 'Back',
-      title: 'Curator Access',
-      subtitle: "Sign in to manage the artwork collection",
+      title: 'Manager Access',
+      subtitle: "Sign in to manage the monuments' archive",
       emailLabel: 'Email',
-      emailPh: 'curator@museum.com',
+      emailPh: 'manager@archive.com',
       passLabel: 'Password',
       passPh: 'Enter your password',
       signIn: 'Sign In',
@@ -62,7 +62,7 @@ import { getLang, setLang } from './db.js';
   function initCreds(){
     try {
       if (!localStorage.getItem(KEYS.CREDS)) {
-        localStorage.setItem(KEYS.CREDS, JSON.stringify({ email: 'curator@museum.com', password: 'tesi2025' }));
+        localStorage.setItem(KEYS.CREDS, JSON.stringify({ email: 'manager@archive.com', password: 'tesi2025' }));
       }
     } catch(_) {}
   }
@@ -87,7 +87,7 @@ import { getLang, setLang } from './db.js';
       if (creds && email === String(creds.email || '').toLowerCase() && pass === String(creds.password || '')) {
         setAuthed();
         showMsg(t().msg_ok, true);
-        setTimeout(()=>{ location.href = './curator_dashboard.html'; }, 200);
+        setTimeout(()=>{ location.href = './manager_dashboard.html'; }, 200);
       } else {
         showMsg(t().msg_bad);
       }
@@ -101,7 +101,7 @@ import { getLang, setLang } from './db.js';
     applyLang();
     if (alreadyAuthed()) {
       // Optionally auto-redirect if already authenticated
-      // location.replace('./curator_dashboard.html');
+      // location.replace('./manager_dashboard.html');
     }
     const btn = document.getElementById('signInBtn');
     if (btn) btn.addEventListener('click', handleLogin);

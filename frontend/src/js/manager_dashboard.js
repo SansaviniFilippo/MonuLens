@@ -399,43 +399,43 @@ document.getElementById("openMapBtn").addEventListener("click", () => {
 const formEl = document.getElementById('f');
 if (formEl) formEl.addEventListener('submit', onSubmit);
 
-// Dashboard auth guard and UI helpers (migrated from curator_dashboard.html inline scripts)
+// Dashboard auth guard and UI helpers (migrated from manager_dashboard.html inline scripts)
 (function(){
   // Detect curator dashboard by presence of main container or form
   const isDashboard = document.querySelector('.cdash') || document.getElementById('f');
   if (!isDashboard) return;
 
-  // i18n dictionary for Curator Dashboard
+  // i18n dictionary for Manager Dashboard
   const I18N = {
     it: {
-      title: 'Dashboard Curatore',
-      subtitle: 'Gestisci la collezione del museo',
+      title: 'Dashboard Gestore',
+      subtitle: 'Gestisci l\'archivio dei monumenti della città',
       signOut: 'Esci',
-      tabs: ['Aggiungi Opera', 'Gestisci Collezione'],
-      sectionTitle: 'Aggiungi Nuova Opera',
+      tabs: ['Aggiungi Monumento', 'Gestisci Archivio'],
+      sectionTitle: 'Aggiungi Nuovo Monumento',
       dzStrong: 'Clicca per caricare',
       dzSmall: '',
-      imagesLabel: "Immagini Opera d'Arte",
+      imagesLabel: "Immagini Monumento",
       fields: {
-        title: { label: 'Titolo', ph: 'Inserisci il titolo dell\'opera' },
+        title: { label: 'Titolo', ph: 'Inserisci il titolo del monumento' },
         artist: { label: 'Artista', ph: 'Inserisci il nome dell\'artista' },
         year: { label: 'Anno', ph: 'es. 1620 ca.' },
         desc_it: { label: 'Descrizione IT', ph: 'Descrizione in italiano' },
         desc_en: { label: 'Descrizione EN', ph: 'Descrizione in inglese' }
       },
-      save: 'Salva Opera',
+      save: 'Salva Monumento',
       filesSelected: (n)=> n ? `${n} file selezionati` : '',
       manage: {
-        sectionTitle: 'Gestione Collezione',
-        countSuffix: 'opere in collezione',
+        sectionTitle: 'Gestione Archivio',
+        countSuffix: 'monumenti in archivio',
         headers: { title: 'Titolo', images: 'Immagini', actions: '' },
-        loadFailRow: 'Impossibile caricare la collezione',
-        emptyRow: 'Nessuna opera presente',
+        loadFailRow: 'Impossibile caricare l\'archivio',
+        emptyRow: 'Nessun monumento presente',
         filesCount: (n)=> n===1 ? '1 file' : `${n} file`,
         edit: 'Modifica',
         delete: 'Elimina',
-        confirmDeleteArtwork: 'Eliminare questa opera? L’operazione non può essere annullata.',
-        editArtwork: 'Modifica Opera',
+        confirmDeleteArtwork: 'Eliminare questa monumento? L’operazione non può essere annullata.',
+        editArtwork: 'Modifica Monumento',
         close: 'Chiudi',
         fieldLabels: { Title:'Titolo', Artist:'Artista', Year:'Anno', ItalianDescription:'Descrizione Italiana', EnglishDescription:'Descrizione Inglese' },
         imageFiles: 'File Immagine',
@@ -447,7 +447,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
         tokenPrompt: 'Inserisci X-Admin-Token',
         deleteFailed: 'Eliminazione non riuscita: ',
         saveFailed: 'Salvataggio non riuscito: ',
-        detailsLoadFailed: 'Impossibile caricare i dettagli dell’opera'
+        detailsLoadFailed: 'Impossibile caricare i dettagli del monumento'
       },
       map: {
           open: "🌍 Apri Mappa",
@@ -461,34 +461,34 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
       }
     },
     en: {
-      title: 'Curator Dashboard',
-      subtitle: "Manage your museum's artwork collection",
+      title: 'Manager Dashboard',
+      subtitle: "Manage the city's monuments' archive",
       signOut: 'Sign Out',
-      tabs: ['Add Artwork', 'Manage Collection'],
-      sectionTitle: 'Add New Artwork',
+      tabs: ['Add Monument', 'Manage Archive'],
+      sectionTitle: 'Add New Monument',
       dzStrong: 'Click to upload',
       dzSmall: '',
-      imagesLabel: 'Artwork Images',
+      imagesLabel: 'Monument Images',
       fields: {
-        title: { label: 'Title', ph: 'Enter artwork title' },
+        title: { label: 'Title', ph: 'Enter monument title' },
         artist: { label: 'Artist', ph: 'Enter artist name' },
         year: { label: 'Year', ph: 'e.g., 1620 ca.' },
         desc_it: { label: 'IT description', ph: 'Description in Italian' },
         desc_en: { label: 'EN description', ph: 'Description in English' }
       },
-      save: 'Save Artwork',
+      save: 'Save Monument',
       filesSelected: (n)=> n ? `${n} file selected` : '',
       manage: {
-        sectionTitle: 'Collection Management',
-        countSuffix: 'artworks in collection',
+        sectionTitle: 'Archive Management',
+        countSuffix: 'monuments in archive',
         headers: { title: 'Title', images: 'Images', actions: '' },
-        loadFailRow: 'Failed to load collection',
-        emptyRow: 'No artworks yet',
+        loadFailRow: 'Failed to load archive',
+        emptyRow: 'No monuments yet',
         filesCount: (n)=> n===1 ? '1 file' : `${n} files`,
         edit: 'Edit',
         delete: 'Delete',
-        confirmDeleteArtwork: 'Delete this artwork? This cannot be undone.',
-        editArtwork: 'Edit Artwork',
+        confirmDeleteArtwork: 'Delete this monument? This cannot be undone.',
+        editArtwork: 'Edit Monument',
         close: 'Close',
         fieldLabels: { Title:'Title', Artist:'Artist', Year:'Year', ItalianDescription:'Italian Description', EnglishDescription:'English Description' },
         imageFiles: 'Image Files',
@@ -500,7 +500,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
         tokenPrompt: 'Enter X-Admin-Token',
         deleteFailed: 'Delete failed: ',
         saveFailed: 'Save failed: ',
-        detailsLoadFailed: 'Failed to load artwork details'
+        detailsLoadFailed: 'Failed to load monument details'
       },
       map: {
           open: "🌍 Open Map",
@@ -523,8 +523,8 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
 
     const title = document.querySelector('.head .title');
     const subtitle = document.querySelector('.head .subtitle');
-    if (title) title.innerHTML = (lang === 'en') ? 'Curator <br/>Dashboard' : 'Dashboard <br/>Curatore';
-    if (subtitle) subtitle.innerHTML = (lang === 'en') ? "Manage your museum's<br/>artwork collection" : 'Gestisci la collezione<br/>del museo';
+    if (title) title.innerHTML = (lang === 'en') ? 'Manager <br/>Dashboard' : 'Dashboard <br/>Gestore';
+    if (subtitle) subtitle.innerHTML = (lang === 'en') ? "Manage the city's<br/>monuments' archive" : 'Gestisci l\'archivio dei monumenti<br/>della città';
 
 
 
@@ -694,7 +694,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
 
   // Sign out
   const signOutBtn = document.getElementById('signOutBtn');
-  if (signOutBtn) signOutBtn.addEventListener('click', ()=>{ try { localStorage.removeItem('artlens.auth'); } catch(_) {} location.href = './curator_access.html'; });
+  if (signOutBtn) signOutBtn.addEventListener('click', ()=>{ try { localStorage.removeItem('artlens.auth'); } catch(_) {} location.href = './manager_access.html'; });
   // ------------------------------
   // Manage Collection: tabs + table
   // ------------------------------
