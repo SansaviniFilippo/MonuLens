@@ -275,6 +275,7 @@ function initMapOverlay(existingGeoJSON = null) {
       console.log("✅ GeoJSON salvato:", geojson);
   };
 
+  window.dispatchEvent(new Event("storage")); // forza applyLang()
 }
 
 
@@ -447,6 +448,16 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
         deleteFailed: 'Eliminazione non riuscita: ',
         saveFailed: 'Salvataggio non riuscito: ',
         detailsLoadFailed: 'Impossibile caricare i dettagli dell’opera'
+      },
+      map: {
+          open: "🌍 Apri Mappa",
+          hint: "Seleziona un punto o un poligono sulla mappa",
+          draw: "✏️ Poligono",
+          undo: "↩️ Annulla",
+          addPoint: "📍 Punto",
+          clear: "🗑️ Cancella",
+          confirm: "✅ Conferma coordinate",
+          close: "Chiudi"
       }
     },
     en: {
@@ -490,6 +501,16 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
         deleteFailed: 'Delete failed: ',
         saveFailed: 'Save failed: ',
         detailsLoadFailed: 'Failed to load artwork details'
+      },
+      map: {
+          open: "🌍 Open Map",
+          hint: "Select a point or a polygon on the map",
+          draw: "✏️ Polygon",
+          undo: "↩️ Undo",
+          addPoint: "📍 Point",
+          clear: "🗑️ Clear",
+          confirm: "✅ Confirm Coordinates",
+          close: "Close"
       }
     }
   };
@@ -504,6 +525,8 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
     const subtitle = document.querySelector('.head .subtitle');
     if (title) title.innerHTML = (lang === 'en') ? 'Curator <br/>Dashboard' : 'Dashboard <br/>Curatore';
     if (subtitle) subtitle.innerHTML = (lang === 'en') ? "Manage your museum's<br/>artwork collection" : 'Gestisci la collezione<br/>del museo';
+
+
 
     const signOut = document.querySelector('#signOutBtn span');
     if (signOut) signOut.textContent = tr.signOut;
@@ -550,6 +573,33 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
       if (th2 && trm?.headers?.images) th2.textContent = trm.headers.images;
       if (th3 && trm?.headers?.actions) th3.textContent = trm.headers.actions;
     } catch {}
+
+    // --- MAP UI ---
+    const trm = tr.map;
+    const openMapBtn = document.getElementById("openMapBtn");
+    if (openMapBtn && trm?.open) openMapBtn.textContent = trm.open;
+
+    const mapHint = document.getElementById("mapHint");
+    if (mapHint && trm?.hint) mapHint.textContent = trm.hint;
+
+    const drawBtn = document.getElementById("drawBtn");
+    if (drawBtn && trm?.draw) drawBtn.textContent = trm.draw;
+
+    const undoBtn = document.getElementById("undoBtn");
+    if (undoBtn && trm?.undo) undoBtn.textContent = trm.undo;
+
+    const addPointBtn = document.getElementById("addPointBtn");
+    if (addPointBtn && trm?.addPoint) addPointBtn.textContent = trm.addPoint;
+
+    const clearBtn = document.getElementById("clearBtn");
+    if (clearBtn && trm?.clear) clearBtn.textContent = trm.clear;
+
+    const confirmBtn = document.getElementById("confirmBtn");
+    if (confirmBtn && trm?.confirm) confirmBtn.textContent = trm.confirm;
+
+    const closeMapBtn = document.getElementById("closeMapBtn");
+    if (closeMapBtn && trm?.close) closeMapBtn.setAttribute("title", trm.close);
+
 
     // Fields labels and placeholders
     const map = [
@@ -812,6 +862,16 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
       </div>
     `;
     document.body.appendChild(ov);
+
+    // 🔥 Traduzione bottone mappa nel modal (dinamico)
+    {
+      const lang = getLang();
+      const tr = (I18N[lang] || I18N.it).map;
+      const editMapBtn = ov.querySelector("#editMapBtn");
+      if (editMapBtn && tr?.open) {
+        editMapBtn.textContent = tr.open;
+      }
+    }
 
     const close = ()=>{ try { ov.remove(); } catch(_){} };
     ov.querySelector('.md-close')?.addEventListener('click', close);
