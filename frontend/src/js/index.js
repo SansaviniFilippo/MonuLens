@@ -1,4 +1,4 @@
-import { appEl, videoEl, canvasEl, hudEl, startBtn, statusEl, infoEl, detailEl, detailTitleEl, detailMetaEl, detailBodyEl, detailArtistEl, detailYearEl, detailMuseumEl, detailLocationEl, closeDetailBtn, backBtn } from './dom.js';
+import { appEl, videoEl, canvasEl, hudEl, startBtn, statusEl, infoEl, detailEl, detailNameEl, detailMetaEl, detailBodyEl, detailArtistEl, detailYearEl, detailMuseumEl, detailLocationEl, closeDetailBtn, backBtn } from './dom.js';
 import { status as setStatus, showInfo, hideHint, clearHotspots, clientPointToVideo, pointInBox } from './ui.js';
 import { initDetector, detector, closeDetector } from './detection.js';
 import { initEmbeddingModel } from './embedding.js';
@@ -242,7 +242,7 @@ function openDetail(entry, confidence) {
   try { infoEl.style.display = 'none'; } catch {}
   hideHint();
   clearHotspots();
-  if (detailTitleEl) detailTitleEl.textContent = entry?.title || 'Opera';
+  if (detailNameEl) detailNameEl.textContent = entry?.name || 'Opera';
 
   const setField = (el, val) => {
     if (!el) return;
@@ -379,7 +379,7 @@ function initDetailMap(geojson, userCoords) {
 
 function closeDetail() {
   if (detailEl) {
-    // play graceful closing animation
+
     detailEl.classList.remove('open');
     detailEl.classList.add('closing');
     const end = () => {
@@ -684,38 +684,3 @@ function stopAll() {
     }
   });
 })();
-
-/*
-
-// === DEBUG DETAIL BUTTON ===
-document.getElementById("debugDetailBtn")?.addEventListener("click", () => {
-  if (typeof openDetail !== "function") {
-    console.warn("⚠️ openDetail non è ancora disponibile. Attendi che la pagina finisca di caricare.");
-    return;
-  }
-
-  const fakeEntry = {
-    title: "Fontana di Trevi",
-    artist: "Nicola Salvi",
-    year: "1732",
-    description: "Una delle fontane più celebri di Roma, completata da Giuseppe Pannini.",
-    // 📍 Poligono (centro di Roma)
-    location_coords: JSON.stringify({
-      type: "Polygon",
-      coordinates: [
-        [
-          [12.4833, 41.9009],
-          [12.4842, 41.9010],
-          [12.4840, 41.9004],
-          [12.4833, 41.9009]
-        ]
-      ]
-    })
-  };
-
-  // Mostra la scheda di dettaglio con la mappa
-  openDetail(fakeEntry, 0.99);
-});
-
-
- */

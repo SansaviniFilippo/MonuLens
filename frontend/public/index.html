@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>ArtLens</title>
+  <title>MonuLens</title>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Cormorant+Garamond:wght@600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles/index.css" />
@@ -11,7 +11,6 @@
 <body>
   <div class="wrap">
     <section class="card" aria-labelledby="t">
-      <!-- Golden language bar -->
       <div class="langbar" role="region" aria-label="Language selector bar">
         <div class="langbar-inner">
           <img class="globe" src="images/globe.png" alt="" aria-hidden="true" />
@@ -46,7 +45,6 @@
     </section>
   </div>
 
-  <!-- Scanner overlay (hidden until activated) -->
   <div id="scannerOverlay" aria-hidden="true">
     <iframe id="scannerFrame" title="Artwork Scanner" allow="camera; microphone" referrerpolicy="no-referrer"></iframe>
     <button id="closeScanner" type="button" title="Chiudi" aria-label="Chiudi">✕</button>

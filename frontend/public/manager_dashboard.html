@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>curator - dashboard</title>
+  <title>manager - dashboard</title>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://cdn.jsdelivr.net/npm/ol@v9.1.0/ol.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/ol@v9.1.0/dist/ol.js"></script>
@@ -14,7 +14,7 @@
   <div class="cdash">
     <header class="head">
       <div>
-        <h1 class="title">Curator <br/>Dashboard</h1>
+        <h1 class="title">Manager <br/>Dashboard</h1>
         <p class="subtitle">Manage your museum's<br/>artwork collection</p>
       </div>
       <button id="signOutBtn" class="signout" type="button" title="Sign Out">
@@ -42,8 +42,8 @@
         <div id="previews" class="previews" aria-live="polite" aria-label="Anteprima immagini selezionate"></div>
 
         <div class="field">
-          <label class="lbl" for="title">Title</label>
-          <input id="title" class="input" name="title" placeholder="Enter artwork title" />
+          <label class="lbl" for="name">Name</label>
+          <input id="name" class="input" name="name" placeholder="Enter monument name" />
         </div>
 
         <div class="field">
@@ -88,7 +88,7 @@
         <table id="collectionTable" class="mgmt-table" aria-describedby="mgmtTitle">
           <thead>
             <tr>
-              <th>Title</th>
+              <th>Name</th>
               <th>Images</th>
               <th class="actions-col"></th>
             </tr>

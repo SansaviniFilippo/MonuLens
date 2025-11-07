@@ -25,13 +25,13 @@ FRONTEND_ORIGINS = [o.strip() for o in os.getenv("FRONTEND_ORIGINS", ",".join(DE
 
 # Supabase integration imports and admin token
 from .db import run
-from .service import upsert_artwork_with_descriptors
+from .service import upsert_monument_with_descriptors
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN")
 
 # ----------------------------------------------------------------------------
 # App
 # ----------------------------------------------------------------------------
-app = FastAPI(title="ArtLens Backend", version="0.1.0")
+app = FastAPI(title="Monulens Backend", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -46,7 +46,7 @@ app.add_middleware(
 # ----------------------------------------------------------------------------
 # In-memory cache (populated from Supabase)
 # ----------------------------------------------------------------------------
-artworks: Dict[str, Dict[str, Any]] = {}
+monuments: Dict[str, Dict[str, Any]] = {}
 flat_descriptors: List[Dict[str, Any]] = []
 db_dim: Optional[int] = None
 
@@ -71,7 +71,7 @@ class VisualDescriptor(BaseModel):
 
 class CatalogItem(BaseModel):
     id: str
-    title: Optional[str] = None
+    name: Optional[str] = None
     artist: Optional[str] = None
     year: Optional[str] = None
     descriptions: Optional[Dict[str, str]] = None
@@ -86,9 +86,9 @@ class MatchRequest(BaseModel):
     lang: Optional[str] = Field(default=None, description='Preferred language for description (it, en, ...)')
 
 class MatchItem(BaseModel):
-    artwork_id: str
+    monument_id: str
     descriptor_id: Optional[str] = None
-    title: Optional[str] = None
+    name: Optional[str] = None
     artist: Optional[str] = None
     description: Optional[str] = None
     confidence: float
@@ -123,24 +123,24 @@ def get_catalog(with_image_counts: bool = False):
     counts: Dict[str, int] = {}
     if with_image_counts:
         for d in flat_descriptors:
-            aid = d.get("artwork_id")
+            aid = d.get("monument_id")
             if aid is not None:
                 counts[aid] = counts.get(aid, 0) + 1
-    for art_id, art in artworks.items():
+    for monu_id, art in monuments.items():
         entry = {
-            "id": art_id,
-            "title": art.get("title"),
+            "id": monu_id,
+            "name": art.get("name"),
             "artist": art.get("artist"),
             "year": art.get("year"),
             "descriptions": art.get("descriptions"),
             "location_coords": art.get("location_coords"),
         }
         if with_image_counts:
-            entry["image_count"] = counts.get(art_id, 0)
+            entry["image_count"] = counts.get(monu_id, 0)
         items.append(entry)
-    # Sort by title, nulls/empties last
+    # Sort by name, nulls/empties last
     def _sort_key(x: Dict[str, Any]):
-        t = x.get("title")
+        t = x.get("name")
         empty = (t is None) or (isinstance(t, str) and t.strip() == "")
         return (empty, str(t).lower() if t is not None else "")
     items.sort(key=_sort_key)
@@ -149,10 +149,10 @@ def get_catalog(with_image_counts: bool = False):
 
 @app.get("/descriptors", response_model=Dict[str, List[float]])
 def get_descriptors():
-    # Serve distinct first embedding per artwork from in-memory cache
+    # Serve distinct first embedding per monument from in-memory cache
     out: Dict[str, List[float]] = {}
     for d in flat_descriptors:
-        aid = d.get("artwork_id")
+        aid = d.get("monument_id")
         if aid is None or aid in out:
             continue
         emb = d.get("embedding")
@@ -163,10 +163,10 @@ def get_descriptors():
 # New v2 endpoints
 @app.get("/descriptors_v2", response_model=Dict[str, List[List[float]]])
 def get_descriptors_v2():
-    # Serve all embeddings per artwork from in-memory cache
+    # Serve all embeddings per monument from in-memory cache
     out: Dict[str, List[List[float]]] = {}
     for d in flat_descriptors:
-        aid = d.get("artwork_id")
+        aid = d.get("monument_id")
         emb = d.get("embedding")
         if aid is None or not isinstance(emb, list):
             continue
@@ -177,7 +177,7 @@ def get_descriptors_v2():
 def get_descriptors_meta_v2():
     return [
         {
-            "artwork_id": d["artwork_id"],
+            "monument_id": d["monument_id"],
             "descriptor_id": d.get("descriptor_id"),
             "image_path": d.get("image_path"),
             "embedding": d.get("embedding"),
@@ -208,26 +208,26 @@ def match(req: MatchRequest):
         raise HTTPException(status_code=400, detail=f"Embedding dim mismatch: got {q.shape[0]}, expected {db_dim}")
     q = _l2_normalize(q)
 
-    # score per descriptor, keep best per artwork
-    best_per_artwork: Dict[str, Dict[str, Any]] = {}
+    # score per descriptor, keep best per monument
+    best_per_monument: Dict[str, Dict[str, Any]] = {}
     for d in flat_descriptors:
         v = np.asarray(d["embedding"], dtype=np.float32)
         s = float(np.dot(q, v))
         if s < req.threshold:
             continue
-        art_id = d["artwork_id"]
-        cur = best_per_artwork.get(art_id)
+        monu_id = d["monument_id"]
+        cur = best_per_monument.get(monu_id)
         if cur is None or s > cur["score"]:
-            best_per_artwork[art_id] = {"score": s, "descriptor": d}
+            best_per_monument[monu_id] = {"score": s, "descriptor": d}
 
-    ranked = sorted(best_per_artwork.items(), key=lambda x: x[1]["score"], reverse=True)[: req.top_k]
+    ranked = sorted(best_per_monument.items(), key=lambda x: x[1]["score"], reverse=True)[: req.top_k]
 
     lang = (req.lang or '').lower()[:2] if req.lang else None
     results: List[MatchItem] = []
-    for art_id, info in ranked:
-        art = artworks.get(art_id, {})
+    for monu_id, info in ranked:
+        monu = monuments.get(monu_id, {})
         desc_text = None
-        desc_map = art.get("descriptions") if isinstance(art.get("descriptions"), dict) else None
+        desc_map = monu.get("descriptions") if isinstance(monu.get("descriptions"), dict) else None
         if desc_map:
             if lang and desc_map.get(lang):
                 desc_text = desc_map.get(lang)
@@ -235,10 +235,10 @@ def match(req: MatchRequest):
                 desc_text = desc_map.get('it') or desc_map.get('en') or next(iter(desc_map.values()), None)
         d = info["descriptor"]
         results.append(MatchItem(
-            artwork_id=art_id,
+            monument_id=monu_id,
             descriptor_id=d.get("descriptor_id"),
-            title=art.get("title"),
-            artist=art.get("artist"),
+            name=monu.get("name"),
+            artist=monu.get("artist"),
             description=desc_text,
             confidence=float(info["score"]),
             image_path=d.get("image_path"),
@@ -260,9 +260,9 @@ def match(req: MatchRequest):
 # -----------------------------
 # Supabase admin + health DB
 # -----------------------------
-class ArtworkUpsert(BaseModel):
+class MonumentUpsert(BaseModel):
     id: Optional[str] = None
-    title: Optional[str] = None
+    name: Optional[str] = None
     artist: Optional[str] = None
     year: Optional[str] = None
     descriptions: Optional[Dict[str, str]] = None
@@ -283,57 +283,57 @@ def _slugify(text: str) -> str:
     return s or "opera"
 
 
-def _ensure_unique_art_id(base_id: str) -> str:
+def _ensure_unique_monu_id(base_id: str) -> str:
     candidate = base_id or "opera"
     suffix = 2
     while True:
         db_taken = False
         try:
-            row = run("select 1 from artworks where id = :id limit 1", {"id": candidate}).fetchone()
+            row = run("select 1 from monuments where id = :id limit 1", {"id": candidate}).fetchone()
             db_taken = bool(row)
         except Exception:
             # DB not reachable; fall back to in-memory uniqueness only
             db_taken = False
-        mem_taken = candidate in artworks
+        mem_taken = candidate in monuments
         if not (db_taken or mem_taken):
             return candidate
         candidate = f"{base_id}-{suffix}" if base_id else f"opera-{suffix}"
         suffix += 1
 
 
-@app.post("/artworks")
-def upsert_artwork(art: ArtworkUpsert, x_admin_token: str = Header(default="")):
+@app.post("/monuments")
+def upsert_monument(monu: MonumentUpsert, x_admin_token: str = Header(default="")):
     if not ADMIN_TOKEN or x_admin_token != ADMIN_TOKEN:
         raise HTTPException(status_code=401, detail="Unauthorized")
     try:
-        art_dict = art.model_dump()
-        art_id = (art_dict.get("id") or "").strip() if isinstance(art_dict.get("id"), str) else None
-        if not art_id:
-            base = _slugify(art_dict.get("title") or "")
-            art_id = _ensure_unique_art_id(base)
-            art_dict["id"] = art_id
+        monu_dict = monu.model_dump()
+        monu_id = (monu_dict.get("id") or "").strip() if isinstance(monu_dict.get("id"), str) else None
+        if not monu_id:
+            base = _slugify(monu_dict.get("name") or "")
+            monu_id = _ensure_unique_monu_id(base)
+            monu_dict["id"] = monu_id
 
         try:
             # Try DB upsert first
-            upsert_res = upsert_artwork_with_descriptors(art_dict)
+            upsert_res = upsert_monument_with_descriptors(monu_dict)
             # Refresh in-memory cache from Supabase so /match reflects the latest data
             try:
                 _refresh_cache_from_db()
             except Exception as re:
                 # Fallback: apply to in-memory cache and persist warm cache to disk
-                print("[ArtLens] cache refresh error after upsert, applying fallback:", re)
+                print("[Monulens] cache refresh error after upsert, applying fallback:", re)
                 try:
-                    _apply_upsert_to_cache(art_dict, upsert_res or {})
+                    _apply_upsert_to_cache(monu_dict, upsert_res or {})
                     _save_cache_to_file()
                 except Exception as e2:
-                    print("[ArtLens] fallback cache apply failed:", e2)
+                    print("[Monulens] fallback cache apply failed:", e2)
         except ValueError as e:
             # Validation error coming from service (e.g., dim mismatch)
             raise HTTPException(status_code=400, detail=str(e))
         except Exception as e:
             # DB write failed; fallback to in-memory cache persistence
-            print("[ArtLens] DB upsert failed, saving to in-memory cache:", e)
-            vds = art_dict.get("visual_descriptors") or []
+            print("[Monulens] DB upsert failed, saving to in-memory cache:", e)
+            vds = monu_dict.get("visual_descriptors") or []
             normalized = []
             observed_dim = None
             for idx, vd in enumerate(vds):
@@ -363,62 +363,62 @@ def upsert_artwork(art: ArtworkUpsert, x_admin_token: str = Header(default="")):
                     db_dim = observed_dim
                 elif observed_dim != db_dim:
                     raise HTTPException(status_code=400, detail=f"Embedding dim mismatch: got {observed_dim}, expected {db_dim}")
-            upsert_res = {"id": art_id, "descriptors": normalized, "observed_dim": observed_dim}
+            upsert_res = {"id": monu_id, "descriptors": normalized, "observed_dim": observed_dim}
             try:
-                _apply_upsert_to_cache(art_dict, upsert_res)
+                _apply_upsert_to_cache(monu_dict, upsert_res)
                 _save_cache_to_file()
             except Exception as e2:
-                print("[ArtLens] in-memory cache fallback failed:", e2)
+                print("[Monulens] in-memory cache fallback failed:", e2)
                 raise HTTPException(status_code=500, detail="Failed to persist in memory")
     except HTTPException:
         # Re-raise HTTP errors untouched
         raise
     except Exception as e:
-        print("[ArtLens] upsert error:", e)
+        print("[Monulens] upsert error:", e)
         raise HTTPException(status_code=500, detail="Failed to persist")
-    return {"status": "ok", "id": art_id}
+    return {"status": "ok", "id": monu_id}
 
 
-@app.delete("/artworks/{art_id}")
-def delete_artwork(art_id: str, x_admin_token: str = Header(default="")):
+@app.delete("/monuments/{monu_id}")
+def delete_monument(monu_id: str, x_admin_token: str = Header(default="")):
     if not ADMIN_TOKEN or x_admin_token != ADMIN_TOKEN:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    # Delete the artwork; descriptors have ON DELETE CASCADE
-    res = run("delete from artworks where id = :id", {"id": art_id})
+    # Delete the monument; descriptors have ON DELETE CASCADE
+    res = run("delete from monuments where id = :id", {"id": monu_id})
     # rowcount is available on cursor result proxy; consider 0 as not found
     try:
         count = getattr(res, "rowcount", None)
     except Exception:
         count = None
     if count == 0:
-        raise HTTPException(status_code=404, detail="Artwork not found")
+        raise HTTPException(status_code=404, detail="Monument not found")
     try:
         _refresh_cache_from_db()
     except Exception as re:
-        print("[ArtLens] cache refresh error after delete:", re)
-    return {"status": "ok", "deleted": art_id}
+        print("[Monulens] cache refresh error after delete:", re)
+    return {"status": "ok", "deleted": monu_id}
 
 
-@app.get("/artworks/{art_id}")
-def get_artwork_detail(art_id: str):
-    # Serve artwork details from in-memory cache
-    art = artworks.get(art_id)
-    if not art:
-        raise HTTPException(status_code=404, detail="Artwork not found")
+@app.get("/monuments/{monu_id}")
+def get_monument_detail(monu_id: str):
+    # Serve monument details from in-memory cache
+    monu = monuments.get(monu_id)
+    if not monu:
+        raise HTTPException(status_code=404, detail="Monument not found")
 
     data = {
-        "id": art_id,
-        "title": art.get("title"),
-        "artist": art.get("artist"),
-        "year": art.get("year"),
-        "descriptions": art.get("descriptions"),
-        "location_coords": art.get("location_coords"),
+        "id": monu_id,
+        "name": monu.get("name"),
+        "artist": monu.get("artist"),
+        "year": monu.get("year"),
+        "descriptions": monu.get("descriptions"),
+        "location_coords": monu.get("location_coords"),
     }
 
     # Build descriptors list from cached flat_descriptors
     descs = []
     for d in flat_descriptors:
-        if d.get("artwork_id") == art_id:
+        if d.get("monument_id") == monu_id:
             desc_id = d.get("descriptor_id")
             if desc_id is None:
                 continue
@@ -432,13 +432,13 @@ def get_artwork_detail(art_id: str):
     return data
 
 
-@app.delete("/artworks/{art_id}/descriptors/{descriptor_id}")
-def delete_artwork_descriptor(art_id: str, descriptor_id: str, x_admin_token: str = Header(default="")):
+@app.delete("/monuments/{monu_id}/descriptors/{descriptor_id}")
+def delete_monument_descriptor(monu_id: str, descriptor_id: str, x_admin_token: str = Header(default="")):
     if not ADMIN_TOKEN or x_admin_token != ADMIN_TOKEN:
         raise HTTPException(status_code=401, detail="Unauthorized")
     res = run(
-        "delete from descriptors where artwork_id = :art_id and descriptor_id = :desc_id",
-        {"art_id": art_id, "desc_id": descriptor_id}
+        "delete from descriptors where monument_id = :monu_id and descriptor_id = :desc_id",
+        {"monu_id": monu_id, "desc_id": descriptor_id}
     )
     try:
         count = getattr(res, "rowcount", None)
@@ -449,16 +449,16 @@ def delete_artwork_descriptor(art_id: str, descriptor_id: str, x_admin_token: st
     try:
         _refresh_cache_from_db()
     except Exception as re:
-        print("[ArtLens] cache refresh error after descriptor delete:", re)
+        print("[Monulens] cache refresh error after descriptor delete:", re)
     return {"status": "ok", "deleted": descriptor_id}
 
 
 @app.get("/health_db")
 def health_db():
     try:
-        row = run("select count(*) from artworks").fetchone()
+        row = run("select count(*) from monuments").fetchone()
         cnt = int(row[0]) if row else 0
-        return {"db": "supabase", "artworks": cnt}
+        return {"db": "supabase", "monuments": cnt}
     except Exception as e:
         e_orig = getattr(e, "orig", None)
         raw_msg = str(e_orig) if e_orig else str(e)
@@ -472,35 +472,35 @@ def health_db():
 from typing import Tuple as _TupleAlias  # local alias to avoid shadowing
 
 
-def _apply_upsert_to_cache(art_meta: Dict[str, Any], upsert: Dict[str, Any]) -> None:
+def _apply_upsert_to_cache(monu_meta: Dict[str, Any], upsert: Dict[str, Any]) -> None:
     """Best-effort: merge the just-upserted data into the in-memory cache.
-    - Updates artworks[art_id] metadata fields.
+    - Updates monuments[monu_id] metadata fields.
     - Appends/updates descriptors in flat_descriptors for matching descriptor_id.
     - Sets db_dim if it was None and observed_dim is present.
     """
     try:
-        global artworks, flat_descriptors, db_dim
-        art_id = (art_meta.get("id") or "").strip()
-        if not art_id:
+        global monuments, flat_descriptors, db_dim
+        monu_id = (monu_meta.get("id") or "").strip()
+        if not monu_id:
             return
-        # Update metadata for artwork
-        cur = artworks.get(art_id) or {}
+        # Update metadata for monument
+        cur = monuments.get(monu_id) or {}
         cur.update({
-            "title": art_meta.get("title"),
-            "artist": art_meta.get("artist"),
-            "year": art_meta.get("year"),
-            "descriptions": art_meta.get("descriptions"),
-            "location_coords": art_meta.get("location_coords"),
+            "name": monu_meta.get("name"),
+            "artist": monu_meta.get("artist"),
+            "year": monu_meta.get("year"),
+            "descriptions": monu_meta.get("descriptions"),
+            "location_coords": monu_meta.get("location_coords"),
         })
-        artworks[art_id] = cur
+        monuments[monu_id] = cur
 
         # Merge descriptors (avoid duplicates by descriptor_id)
         new_descs = upsert.get("descriptors") or []
         if new_descs:
             incoming_ids = {str(d.get("descriptor_id")) for d in new_descs if d.get("descriptor_id") is not None}
-            # Remove old entries with same (artwork_id, descriptor_id) to avoid duplicates
+            # Remove old entries with same (monument_id, descriptor_id) to avoid duplicates
             if incoming_ids:
-                flat_descriptors = [d for d in flat_descriptors if not (d.get("artwork_id") == art_id and str(d.get("descriptor_id")) in incoming_ids)]
+                flat_descriptors = [d for d in flat_descriptors if not (d.get("monument_id") == monu_id and str(d.get("descriptor_id")) in incoming_ids)]
             # Append new entries
             for d in new_descs:
                 desc_id = d.get("descriptor_id")
@@ -508,7 +508,7 @@ def _apply_upsert_to_cache(art_meta: Dict[str, Any], upsert: Dict[str, Any]) -> 
                 if desc_id is None or not isinstance(emb, list):
                     continue
                 flat_descriptors.append({
-                    "artwork_id": art_id,
+                    "monument_id": monu_id,
                     "descriptor_id": str(desc_id),
                     "embedding": emb,
                     # image_path unknown here; leave absent/None
@@ -519,7 +519,7 @@ def _apply_upsert_to_cache(art_meta: Dict[str, Any], upsert: Dict[str, Any]) -> 
             if isinstance(od, int):
                 db_dim = od
     except Exception as e:
-        print("[ArtLens] Warning: failed to apply upsert to cache:", e)
+        print("[Monulens] Warning: failed to apply upsert to cache:", e)
 
 
 def _save_cache_to_file():
@@ -529,7 +529,7 @@ def _save_cache_to_file():
         payload = {
             "version": 1,
             "db_dim": db_dim,
-            "artworks": artworks,
+            "monuments": monuments,
             "flat_descriptors": flat_descriptors,
         }
         # Atomic write
@@ -539,9 +539,9 @@ def _save_cache_to_file():
                 json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
             os.replace(tmp_path, DISK_CACHE_PATH)
         size = os.path.getsize(DISK_CACHE_PATH)
-        print(f"[ArtLens] Cache saved to disk: {DISK_CACHE_PATH} ({size} bytes)")
+        print(f"[Monulens] Cache saved to disk: {DISK_CACHE_PATH} ({size} bytes)")
     except Exception as e:
-        print("[ArtLens] Failed to save cache to disk:", e)
+        print("[Monulens] Failed to save cache to disk:", e)
 
 
 def _load_cache_from_file() -> bool:
@@ -555,50 +555,50 @@ def _load_cache_from_file() -> bool:
                 data = json.load(f)
         if not isinstance(data, dict):
             return False
-        req_keys = ("artworks", "flat_descriptors")
+        req_keys = ("monuments", "flat_descriptors")
         if not all(k in data for k in req_keys):
             return False
         # Basic sanity checks
-        aw = data.get("artworks")
+        aw = data.get("monuments")
         fd = data.get("flat_descriptors")
         dim = data.get("db_dim")
         if not isinstance(aw, dict) or not isinstance(fd, list):
             return False
         # Assign globals
-        global artworks, flat_descriptors, db_dim
-        artworks = {str(k): v for k, v in aw.items()}
+        global monuments, flat_descriptors, db_dim
+        monuments = {str(k): v for k, v in aw.items()}
         flat_descriptors = fd
         db_dim = dim if isinstance(dim, int) or dim is None else None
-        print(f"[ArtLens] Cache loaded from disk: artworks={len(artworks)}, descriptors={len(flat_descriptors)}, dim={db_dim}")
+        print(f"[Monulens] Cache loaded from disk: monuments={len(monuments)}, descriptors={len(flat_descriptors)}, dim={db_dim}")
         return True
     except Exception as e:
-        print("[ArtLens] Failed to load cache from disk:", e)
+        print("[Monulens] Failed to load cache from disk:", e)
         return False
 
 
 def _refresh_cache_from_db() -> _TupleAlias[int, int]:
-    """Reload artworks and flat_descriptors from Supabase.
-    Returns (num_artworks, num_descriptors).
+    """Reload monuments and flat_descriptors from Supabase.
+    Returns (num_monuments, num_descriptors).
     """
-    global artworks, flat_descriptors, db_dim
+    global monuments, flat_descriptors, db_dim
 
-    # Load artworks metadata
-    rows_art = run(
+    # Load monuments metadata
+    rows_monu = run(
         """
-        select id, title, artist, year, descriptions, location_coords
-        from artworks
+        select id, name, artist, year, descriptions, location_coords
+        from monuments
         """
     ).mappings().all()
-    new_artworks = {str(r["id"]): dict(r) for r in rows_art}
+    new_monuments = {str(r["id"]): dict(r) for r in rows_monu}
 
     # Load descriptors
     rows_desc = run(
-        "select artwork_id, descriptor_id, embedding from descriptors order by artwork_id, descriptor_id"
+        "select monument_id, descriptor_id, embedding from descriptors order by monument_id, descriptor_id"
     ).all()
 
     new_flat = []
     dim = None
-    for art_id, desc_id, emb in rows_desc:
+    for monu_id, desc_id, emb in rows_desc:
         # emb is a PG float8[] mapped as Python list/tuple via psycopg/SQLAlchemy
         vec = list(emb) if emb is not None else None
         if not isinstance(vec, list):
@@ -609,20 +609,20 @@ def _refresh_cache_from_db() -> _TupleAlias[int, int]:
             # Skip inconsistent dimensions
             continue
         new_flat.append({
-            "artwork_id": str(art_id),
+            "monument_id": str(monu_id),
             "descriptor_id": str(desc_id),
             "embedding": vec,
         })
 
-    artworks = new_artworks
+    monuments = new_monuments
     flat_descriptors = new_flat
     db_dim = dim
     # Persist warm cache to disk (best-effort)
     try:
         _save_cache_to_file()
     except Exception as e:
-        print("[ArtLens] Warning: could not persist cache to disk:", e)
-    return (len(artworks), len(flat_descriptors))
+        print("[Monulens] Warning: could not persist cache to disk:", e)
+    return (len(monuments), len(flat_descriptors))
 
 
 # Refresh cache on startup so /match is ready without legacy JSON
@@ -633,7 +633,7 @@ def _startup_refresh_cache():
         if _load_cache_from_file():
             return
     except Exception as e:
-        print("[ArtLens] Disk cache load failed, will try DB:", e)
+        print("[Monulens] Disk cache load failed, will try DB:", e)
 
     # Retry startup cache load to tolerate transient DB connectivity on Render/Supabase
     max_retries = int(os.getenv("STARTUP_DB_RETRIES", "5"))
@@ -642,17 +642,17 @@ def _startup_refresh_cache():
     for attempt in range(1, max_retries + 1):
         try:
             a, d = _refresh_cache_from_db()
-            print(f"[ArtLens] Cache loaded from Supabase: artworks={a}, descriptors={d}, dim={db_dim}")
+            print(f"[Monulens] Cache loaded from Supabase: monuments={a}, descriptors={d}, dim={db_dim}")
             return
         except Exception as e:
             last_err = e
             if attempt < max_retries:
-                print(f"[ArtLens] Startup cache load attempt {attempt}/{max_retries} failed: {e}. Retrying in {delay:.1f}s...")
+                print(f"[Monulens] Startup cache load attempt {attempt}/{max_retries} failed: {e}. Retrying in {delay:.1f}s...")
                 import time
                 time.sleep(delay)
                 delay = min(delay * 2, 15.0)
             else:
-                print(f"[ArtLens] Failed to load cache from Supabase at startup after {max_retries} attempts: {e}")
+                print(f"[Monulens] Failed to load cache from Supabase at startup after {max_retries} attempts: {e}")
                 break
 
 

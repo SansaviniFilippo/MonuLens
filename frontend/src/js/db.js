@@ -91,7 +91,7 @@ async function loadOptionB_v2() {
 
   const flattened = [];
   for (const art of Array.isArray(catalog) ? catalog : []) {
-    const artId = art?.id != null ? String(art.id) : (art?.title != null ? String(art.title) : null);
+    const artId = art?.id != null ? String(art.id) : (art?.name != null ? String(art.name) : null);
     if (!artId) continue;
     const embs = Array.isArray(descMap?.[artId]) ? descMap[artId] : [];
     for (let i = 0; i < embs.length; i++) {
@@ -101,7 +101,7 @@ async function loadOptionB_v2() {
       flattened.push({
         id: `${artId}#${i}`,
         parentId: artId,
-        title: art.title,
+        name: art.name,
         artist: art.artist,
         year: art.year,
         descriptions: art.descriptions,
@@ -129,7 +129,7 @@ async function loadOptionB() {
 
   const merged = [];
   for (const item of catalog) {
-    const id = item?.id != null ? String(item.id) : (item?.title != null ? String(item.title) : null);
+    const id = item?.id != null ? String(item.id) : (item?.name != null ? String(item.name) : null);
     if (!id) {
       // skip entries without stable id
       continue;

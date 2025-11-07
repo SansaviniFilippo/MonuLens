@@ -34,8 +34,8 @@ def ensure_db_dim(dim: int):
     )
 
 
-def upsert_artwork_with_descriptors(data: Dict[str, Any]) -> Dict[str, Any]:
-    art_id = str(data["id"]).strip()
+def upsert_monument_with_descriptors(data: Dict[str, Any]) -> Dict[str, Any]:
+    monu_id = str(data["id"]).strip()
     descs = data.get("visual_descriptors") or []
 
     normalized: List[Dict[str, Any]] = []
@@ -73,10 +73,10 @@ def upsert_artwork_with_descriptors(data: Dict[str, Any]) -> Dict[str, Any]:
     # Upsert artwork metadata (single query)
     run(
         """
-        insert into artworks (id, title, artist, year, descriptions, location_coords, updated_at)
-        values (:id, :title, :artist, :year, cast(:descriptions as jsonb), cast(:location_coords as jsonb), now())
+        insert into monuments (id, name, artist, year, descriptions, location_coords, updated_at)
+        values (:id, :name, :artist, :year, cast(:descriptions as jsonb), cast(:location_coords as jsonb), now())
             on conflict (id) do update set
-            title = excluded.title,
+            name = excluded.name,
                                     artist = excluded.artist,
                                     year = excluded.year,
                                     descriptions = excluded.descriptions,
@@ -84,8 +84,8 @@ def upsert_artwork_with_descriptors(data: Dict[str, Any]) -> Dict[str, Any]:
                                     updated_at = now()
         """,
         {
-            "id": art_id,
-            "title": data.get("title"),
+            "id": monu_id,
+            "name": data.get("name"),
             "artist": data.get("artist"),
             "year": data.get("year"),
             "descriptions": json.dumps(data.get("descriptions") or {}),
@@ -97,18 +97,18 @@ def upsert_artwork_with_descriptors(data: Dict[str, Any]) -> Dict[str, Any]:
     # Use prepare=False to avoid server-side prepared statement naming conflicts.
     if normalized:
         values = [
-            {"art_id": art_id, "desc_id": d["descriptor_id"], "embedding": d["embedding"]}
+            {"monu_id": monu_id, "desc_id": d["descriptor_id"], "embedding": d["embedding"]}
             for d in normalized
         ]
         run(
             """
-            insert into descriptors (artwork_id, descriptor_id, embedding)
-            values (:art_id, :desc_id, :embedding)
-                on conflict (artwork_id, descriptor_id) do update set
+            insert into descriptors (monument_id, descriptor_id, embedding)
+            values (:monu_id, :desc_id, :embedding)
+                on conflict (monument_id, descriptor_id) do update set
                 embedding = excluded.embedding
             """,
             values,
             prepare=False,  # IMPORTANT to avoid DuplicatePreparedStatement issues
         )
 
-    return {"id": art_id, "descriptors": normalized, "observed_dim": observed_dim}
+    return {"id": monu_id, "descriptors": normalized, "observed_dim": observed_dim}

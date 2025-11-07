@@ -347,7 +347,7 @@ async function onSubmit(e) {
     }
 
     const payload = {
-      title: (fd.get('title') || '').trim() || null,
+      name: (fd.get('name') || '').trim() || null,
       artist: (fd.get('artist') || '').trim() || null,
       year: (fd.get('year') || '').trim() || null,
       descriptions: buildDescriptions(fd),
@@ -357,7 +357,7 @@ async function onSubmit(e) {
 
     // Invia sempre il token admin fisso (niente più prompt)
     setStatus('Salvataggio in corso…');
-    const res = await fetch(`${BACKEND_URL}/artworks`, {
+    const res = await fetch(`${BACKEND_URL}/monuments`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -417,7 +417,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
       dzSmall: '',
       imagesLabel: "Immagini Monumento",
       fields: {
-        title: { label: 'Titolo', ph: 'Inserisci il titolo del monumento' },
+        name: { label: 'Nome', ph: 'Inserisci il nome del monumento' },
         artist: { label: 'Artista', ph: 'Inserisci il nome dell\'artista' },
         year: { label: 'Anno', ph: 'es. 1620 ca.' },
         desc_it: { label: 'Descrizione IT', ph: 'Descrizione in italiano' },
@@ -428,7 +428,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
       manage: {
         sectionTitle: 'Gestione Archivio',
         countSuffix: 'monumenti in archivio',
-        headers: { title: 'Titolo', images: 'Immagini', actions: '' },
+        headers: { name: 'Nome', images: 'Immagini', actions: '' },
         loadFailRow: 'Impossibile caricare l\'archivio',
         emptyRow: 'Nessun monumento presente',
         filesCount: (n)=> n===1 ? '1 file' : `${n} file`,
@@ -437,7 +437,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
         confirmDeleteArtwork: 'Eliminare questa monumento? L’operazione non può essere annullata.',
         editArtwork: 'Modifica Monumento',
         close: 'Chiudi',
-        fieldLabels: { Title:'Titolo', Artist:'Artista', Year:'Anno', ItalianDescription:'Descrizione Italiana', EnglishDescription:'Descrizione Inglese' },
+        fieldLabels: { Name:'Nome', Artist:'Artista', Year:'Anno', ItalianDescription:'Descrizione Italiana', EnglishDescription:'Descrizione Inglese' },
         imageFiles: 'File Immagine',
         add: 'Aggiungi',
         cancel: 'Annulla',
@@ -470,7 +470,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
       dzSmall: '',
       imagesLabel: 'Monument Images',
       fields: {
-        title: { label: 'Title', ph: 'Enter monument title' },
+        name: { label: 'Name', ph: 'Enter monument name' },
         artist: { label: 'Artist', ph: 'Enter artist name' },
         year: { label: 'Year', ph: 'e.g., 1620 ca.' },
         desc_it: { label: 'IT description', ph: 'Description in Italian' },
@@ -481,7 +481,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
       manage: {
         sectionTitle: 'Archive Management',
         countSuffix: 'monuments in archive',
-        headers: { title: 'Title', images: 'Images', actions: '' },
+        headers: { name: 'Name', images: 'Images', actions: '' },
         loadFailRow: 'Failed to load archive',
         emptyRow: 'No monuments yet',
         filesCount: (n)=> n===1 ? '1 file' : `${n} files`,
@@ -490,7 +490,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
         confirmDeleteArtwork: 'Delete this monument? This cannot be undone.',
         editArtwork: 'Edit Monument',
         close: 'Close',
-        fieldLabels: { Title:'Title', Artist:'Artist', Year:'Year', ItalianDescription:'Italian Description', EnglishDescription:'English Description' },
+        fieldLabels: { Name:'Name', Artist:'Artist', Year:'Year', ItalianDescription:'Italian Description', EnglishDescription:'English Description' },
         imageFiles: 'Image Files',
         add: 'Add',
         cancel: 'Cancel',
@@ -569,7 +569,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
       const th1 = document.querySelector('#collectionTable thead th:nth-child(1)');
       const th2 = document.querySelector('#collectionTable thead th:nth-child(2)');
       const th3 = document.querySelector('#collectionTable thead th:nth-child(3)');
-      if (th1 && trm?.headers?.title) th1.textContent = trm.headers.title;
+      if (th1 && trm?.headers?.name) th1.textContent = trm.headers.name;
       if (th2 && trm?.headers?.images) th2.textContent = trm.headers.images;
       if (th3 && trm?.headers?.actions) th3.textContent = trm.headers.actions;
     } catch {}
@@ -603,7 +603,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
 
     // Fields labels and placeholders
     const map = [
-      { id: 'title', key: 'title' },
+      { id: 'name', key: 'name' },
       { id: 'artist', key: 'artist' },
       { id: 'year', key: 'year' },
       { id: 'desc_it', key: 'desc_it' },
@@ -626,9 +626,9 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
     const qs = new URLSearchParams(location.search);
     if (qs.has('logout')) { try { localStorage.removeItem(AUTH_KEY); } catch(_) {} }
     const authed = !!localStorage.getItem(AUTH_KEY);
-    if (!authed) { location.replace('./curator_access.html'); return; }
+    if (!authed) { location.replace('./manager_access.html'); return; }
   } catch (e) {
-    try { location.replace('./curator_access.html'); } catch(_) {}
+    try { location.replace('./manager_access.html'); } catch(_) {}
     return;
   }
 
@@ -751,7 +751,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
       const tr = document.createElement('tr');
       const n = Number(it.image_count||0);
       tr.innerHTML = `
-        <td class=\"col-title\">${escapeHtml(it.title || '')}</td>
+        <td class=\"col-name\">${escapeHtml(it.name || '')}</td>
         <td class=\"col-images\">${trm.filesCount(n)}</td>
         <td class=\"col-actions\">
           <button class=\"btn-edit\" data-id=\"${it.id}\" type=\"button\" title=\"${trm.edit}\" aria-label=\"${trm.edit}\">${iconEdit()}</button>
@@ -771,7 +771,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
         const trm = (I18N[getLang()] || I18N.it).manage;
         if (!confirm(trm.confirmDeleteArtwork)) return;
         try {
-          const resp = await fetch(`${BACKEND_URL}/artworks/${encodeURIComponent(id)}`, { method:'DELETE', headers: { 'X-Admin-Token': ADMIN_TOKEN_FIXED }});
+          const resp = await fetch(`${BACKEND_URL}/monuments/${encodeURIComponent(id)}`, { method:'DELETE', headers: { 'X-Admin-Token': ADMIN_TOKEN_FIXED }});
           if (!resp.ok) {
             const t = await resp.text();
             throw new Error(`${resp.status} ${t}`);
@@ -806,7 +806,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
   // ------------------------------
   // Edit Modal
   // ------------------------------
-  async function openEditModal(artId){
+  async function openEditModal(monuId){
     const ov = document.createElement('div');
     ov.className = 'md-overlay';
     const trm = (I18N[getLang()] || I18N.it).manage;
@@ -819,8 +819,8 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
         <div class="md-body">
           <div class="md-grid">
             <div>
-              <div class="md-label">${trm.fieldLabels.Title}</div>
-              <input id="md_title" class="md-input" />
+              <div class="md-label">${trm.fieldLabels.Name}</div>
+              <input id="md_name" class="md-input" />
             </div>
             <div>
               <div class="md-label">${trm.fieldLabels.Artist}</div>
@@ -880,7 +880,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
     // Fetch details
     let data;
     try {
-      const r = await fetch(`${BACKEND_URL}/artworks/${encodeURIComponent(artId)}`);
+      const r = await fetch(`${BACKEND_URL}/monuments/${encodeURIComponent(monuId)}`);
       if (!r.ok) throw new Error(await r.text());
       data = await r.json();
     } catch (e) {
@@ -892,7 +892,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
 
     // Prefill fields
     const $ = (id)=> ov.querySelector(id);
-    $('#md_title').value = data.title || '';
+    $('#md_name').value = data.name || '';
     $('#md_artist').value = data.artist || '';
     $('#md_year').value = data.year || '';
     const desc = (data.descriptions && typeof data.descriptions === 'object') ? data.descriptions : {};
@@ -939,7 +939,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
         row.querySelector('.file-del').addEventListener('click', async ()=>{
           if (!confirm(trm.deleteImageConfirm(d.descriptor_id))) return;
           try {
-            const resp = await fetch(`${BACKEND_URL}/artworks/${encodeURIComponent(artId)}/descriptors/${encodeURIComponent(d.descriptor_id)}`, { method:'DELETE', headers:{'X-Admin-Token': ADMIN_TOKEN_FIXED}});
+            const resp = await fetch(`${BACKEND_URL}/monuments/${encodeURIComponent(monuId)}/descriptors/${encodeURIComponent(d.descriptor_id)}`, { method:'DELETE', headers:{'X-Admin-Token': ADMIN_TOKEN_FIXED}});
             if (!resp.ok) throw new Error(await resp.text());
             const idx = existing.findIndex(x=> x.descriptor_id === d.descriptor_id);
             if (idx >= 0) existing.splice(idx,1);
@@ -991,8 +991,8 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
 
     $('#md_save')?.addEventListener('click', async ()=>{
       const payload = {
-        id: artId,
-        title: ($('#md_title').value || '').trim() || null,
+        id: monuId,
+        name: ($('#md_name').value || '').trim() || null,
         artist: ($('#md_artist').value || '').trim() || null,
         year: ($('#md_year').value || '').trim() || null,
         descriptions: buildDescriptions(),
@@ -1000,7 +1000,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
         visual_descriptors: pending.map(p=> ({ id: p.id, embedding: Array.isArray(p.embedding) ? p.embedding : Array.from(p.embedding || []) }))
       };
       try {
-        const res = await fetch(`${BACKEND_URL}/artworks`, { method:'POST', headers:{ 'Content-Type':'application/json','X-Admin-Token': ADMIN_TOKEN_FIXED}, body: JSON.stringify(payload)});
+        const res = await fetch(`${BACKEND_URL}/monuments`, { method:'POST', headers:{ 'Content-Type':'application/json','X-Admin-Token': ADMIN_TOKEN_FIXED}, body: JSON.stringify(payload)});
         if (!res.ok) throw new Error(await res.text());
         try { await loadArtworkDB(); } catch (e) { console.warn('Reload DB after edit save failed:', e); }
         close();

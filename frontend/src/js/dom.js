@@ -9,7 +9,7 @@ export const infoEl = document.getElementById('info');
 export const hintEl = document.getElementById('hint');
 export const hotspotsEl = document.getElementById('hotspots');
 export const detailEl = document.getElementById('detail');
-export const detailTitleEl = document.getElementById('detailTitle');
+export const detailNameEl = document.getElementById('detailName');
 // Legacy meta element (no longer used but kept for compatibility)
 export const detailMetaEl = document.getElementById('detailMeta');
 export const detailBodyEl = document.getElementById('detailBody');

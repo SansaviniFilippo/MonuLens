@@ -20,7 +20,7 @@ try {
     if (stickyBest && stickyBest.entry) {
       try {
         showInfo(
-          stickyBest.entry.title || 'Artwork',
+          stickyBest.entry.name || 'Artwork',
           pickLangText(stickyBest.entry.descriptions),
           stickyBest.confidence
         );
@@ -421,9 +421,9 @@ export async function drawDetections(ctx, result, onHotspotClick) {
 
 
           // Show placard with localized description
-          try { showInfo(entry.title || 'Artwork', pickLangText(entry.descriptions), confidence); } catch {}
+          try { showInfo(entry.name || 'Artwork', pickLangText(entry.descriptions), confidence); } catch {}
 
-          const key = (entry && (entry.id != null ? String(entry.id) : (entry.title || '')));
+          const key = (entry && (entry.id != null ? String(entry.id) : (entry.name || '')));
           if (key && key !== lastRecognizedKey) {
             lastRecognizedKey = key;
             showHintFor(entry, box);
@@ -520,7 +520,7 @@ export async function drawDetections(ctx, result, onHotspotClick) {
 
       if (matched && matched.confidence >= COSINE_THRESHOLD) {
         const { entry, confidence } = matched;
-        uiLabel = `${entry.title || 'Artwork'}`; // title only; confidence shown in badge
+        uiLabel = `${entry.name || 'Artwork'}`; // title only; confidence shown in badge
         const hitBox = det.__alignedBox || det.boundingBox;
         lastMatches.push({ entry, confidence, box: hitBox });
         anyMatch = true;
@@ -545,8 +545,8 @@ export async function drawDetections(ctx, result, onHotspotClick) {
     // Update recognition labels for all matches
     updateRecognitionLabels(lastMatches, onHotspotClick);
     placeHintOverBox(best.box);
-    try { showInfo(best.entry.title || 'Artwork', pickLangText(best.entry.descriptions), best.confidence); } catch {}
-    const key = (best.entry && (best.entry.id != null ? String(best.entry.id) : (best.entry.title || '')));
+    try { showInfo(best.entry.name || 'Artwork', pickLangText(best.entry.descriptions), best.confidence); } catch {}
+    const key = (best.entry && (best.entry.id != null ? String(best.entry.id) : (best.entry.name || '')));
     if (key && key !== lastRecognizedKey) {
       lastRecognizedKey = key;
       showHintFor(best.entry, best.box);
@@ -605,7 +605,7 @@ function updateRecognitionLabels(matches, onClick) {
       const pt = videoPointToDisplay(cx, by);
       const dpX = pt.x;
       const dpY = pt.y + 12; // place below bbox with margin
-      const key = (m.entry && (m.entry.id != null ? String(m.entry.id) : (m.entry.title || ''))) || `${Math.round(cx)}x${Math.round(by)}`;
+      const key = (m.entry && (m.entry.id != null ? String(m.entry.id) : (m.entry.name || ''))) || `${Math.round(cx)}x${Math.round(by)}`;
       wantedKeys.add(key);
 
       // Try to reuse existing element by key

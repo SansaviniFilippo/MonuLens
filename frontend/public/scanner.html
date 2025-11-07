@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>ArtLens — Scanner</title>
+  <title>MonuLens — Scanner</title>
   <link href="https://cdn.jsdelivr.net/npm/ol@v9.1.0/ol.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/ol@v9.1.0/dist/ol.js"></script>
   <link rel="stylesheet" href="styles/variables.css" />
@@ -29,7 +29,7 @@
           <span class="ico-left" aria-hidden="true"></span>
         </a>
         <div class="header-title">
-          <span>Scansione Opera</span>
+          <span>Scansione Monumento</span>
         </div>
         <div class="spacer" aria-hidden="true"></div>
       </div>
@@ -53,13 +53,13 @@
     <div id="hotspots" class="hotspots"></div>
 
     <div id="detail" class="detail hidden" aria-modal="true" role="dialog">
-      <div class="detail-card" role="document" aria-labelledby="detailTitle">
+      <div class="detail-card" role="document" aria-labelledby="detailName">
         <button class="detail-close" id="closeDetailBtn" type="button" aria-label="Close" title="Close">
           <svg class="ico-close" aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" focusable="false">
             <path d="M6 6 L18 18 M18 6 L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
           </svg>
         </button>
-        <div class="detail-title" id="detailTitle"></div>
+        <div class="detail-title" id="detailName"></div>
         <div class="detail-sep" role="separator" aria-hidden="true"></div>
         <div class="detail-rows">
           <div class="row"><span class="chip">Artist</span><span class="value" id="detailArtist"></span></div>
@@ -87,16 +87,6 @@
   </script>
 
   <script type="module" src="../src/js/index.js"></script>
-
-  <!-- DEBUG BUTTON (solo per sviluppo, puoi rimuoverlo in produzione)
-  <button id="debugDetailBtn"
-          style="position:fixed;bottom:20px;right:20px;z-index:9999;
-               background:#007aff;color:white;border:none;
-               padding:10px 14px;border-radius:8px;
-               font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.25);">
-      🔍 Test Detail
-  </button>
-  -->
 
 </body>
 </html>
