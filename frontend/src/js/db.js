@@ -1,7 +1,7 @@
 import { BACKEND_URL } from './constants.js';
 import { ensureRuntimeDim, getRuntimeDim } from './embedding.js';
 
-export let artworkDB = [];
+export let monumentDB = [];
 export let dbDim = null;
 
 // Language state
@@ -80,33 +80,33 @@ function toArrayFromCatalog(data) {
 
 async function loadOptionB_v2() {
   const [catRes, descRes] = await Promise.all([
-    fetch(`${BACKEND_URL}/catalog`, { cache: 'no-store' }),
+    fetch(`${BACKEND_URL}/archive`, { cache: 'no-store' }),
     fetch(`${BACKEND_URL}/descriptors_v2`, { cache: 'no-store' })
   ]);
   if (!catRes.ok || !descRes.ok) {
     throw new Error(`/catalog or /descriptors_v2 not available (${catRes.status}, ${descRes.status})`);
   }
-  const catalog = await catRes.json(); // array of artworks
-  const descMap = await descRes.json(); // { artwork_id: [ [..emb1..], [..emb2..] ] }
+  const catalog = await catRes.json(); // array of monuments
+  const descMap = await descRes.json(); // { monument_id: [ [..emb1..], [..emb2..] ] }
 
   const flattened = [];
-  for (const art of Array.isArray(catalog) ? catalog : []) {
-    const artId = art?.id != null ? String(art.id) : (art?.name != null ? String(art.name) : null);
-    if (!artId) continue;
-    const embs = Array.isArray(descMap?.[artId]) ? descMap[artId] : [];
+  for (const monu of Array.isArray(catalog) ? catalog : []) {
+    const monuId = monu?.id != null ? String(monu.id) : (monu?.name != null ? String(monu.name) : null);
+    if (!monuId) continue;
+    const embs = Array.isArray(descMap?.[monuId]) ? descMap[monuId] : [];
     for (let i = 0; i < embs.length; i++) {
       const emb = embs[i];
       const norm = normalizeEmbeddingToFloat32(emb);
       if (!norm) continue;
       flattened.push({
-        id: `${artId}#${i}`,
-        parentId: artId,
-        name: art.name,
-        artist: art.artist,
-        year: art.year,
-        descriptions: art.descriptions,
-        location_coords: art.location_coords,
-        image_path: art?.visual_descriptors?.[i]?.image_path,
+        id: `${monuId}#${i}`,
+        parentId: monuId,
+        name: monu.name,
+        artist: monu.artist,
+        year: monu.year,
+        descriptions: monu.descriptions,
+        location_coords: monu.location_coords,
+        image_path: monu?.visual_descriptors?.[i]?.image_path,
         embedding: norm,
       });
     }
@@ -116,7 +116,7 @@ async function loadOptionB_v2() {
 
 async function loadOptionB() {
   const [catRes, descRes] = await Promise.all([
-    fetch(`${BACKEND_URL}/catalog`, { cache: 'no-store' }),
+    fetch(`${BACKEND_URL}/archive`, { cache: 'no-store' }),
     fetch(`${BACKEND_URL}/descriptors`, { cache: 'no-store' })
   ]);
   if (!catRes.ok || !descRes.ok) {
@@ -144,24 +144,24 @@ async function loadOptionB() {
 }
 
 
-export async function loadArtworkDB() {
+export async function loadMonumentDB() {
   // Prefer v2 endpoints
   try {
-    artworkDB = await loadOptionB_v2();
+    monumentDB = await loadOptionB_v2();
   } catch (eV2) {
     console.warn('V2 endpoints not available. Trying legacy /descriptors. Reason:', eV2?.message || eV2);
     try {
-      artworkDB = await loadOptionB();
+      monumentDB = await loadOptionB();
     } catch (e) {
       console.warn('Both /descriptors_v2 and /descriptors failed:', e?.message || e);
-      artworkDB = [];
+      monumentDB = [];
     }
   }
 
   // Determine dbDim and ensure normalization
   dbDim = null;
   let normalized = 0;
-  for (const e of artworkDB) {
+  for (const e of monumentDB) {
     const emb = e && e.embedding;
     if (!emb || typeof emb.length !== 'number') continue;
     const normVec = normalizeEmbeddingToFloat32(emb);
@@ -185,8 +185,8 @@ export async function loadArtworkDB() {
     }
   }
 
-  console.log('Artwork DB entries:', artworkDB.length, 'dim:', dbDim, 'normalized:', normalized);
-  if (!artworkDB.length) {
+  console.log('Monument DB entries:', monumentDB.length, 'dim:', dbDim, 'normalized:', normalized);
+  if (!monumentDB.length) {
     console.warn('Nessun dato nel catalogo/descrittori. Verifica le API del backend e il popolamento del DB.');
   }
 }

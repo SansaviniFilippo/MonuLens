@@ -52,7 +52,7 @@ db_dim: Optional[int] = None
 
 # Disk cache configuration
 ENABLE_DISK_CACHE = os.getenv("ENABLE_DISK_CACHE", "true").strip().lower() in ("1", "true", "yes", "y", "on")
-DISK_CACHE_PATH = os.getenv("DISK_CACHE_PATH") or os.path.join(tempfile.gettempdir(), "artlens_cache.json")
+DISK_CACHE_PATH = os.getenv("DISK_CACHE_PATH") or os.path.join(tempfile.gettempdir(), "monulens_cache.json")
 _cache_io_lock = threading.Lock()
 
 
@@ -69,7 +69,7 @@ class VisualDescriptor(BaseModel):
     id: Optional[str] = None
     image_path: Optional[str] = None
 
-class CatalogItem(BaseModel):
+class ArchiveItem(BaseModel):
     id: str
     name: Optional[str] = None
     artist: Optional[str] = None
@@ -116,8 +116,8 @@ def health():
 # Note: using the CatalogItem schema defined above (with 'descriptions').
 
 
-@app.get("/catalog", response_model=List[CatalogItem])
-def get_catalog(with_image_counts: bool = False):
+@app.get("/archive", response_model=List[ArchiveItem])
+def get_archive(with_image_counts: bool = False):
     # Serve from in-memory cache populated at startup
     items: List[Dict[str, Any]] = []
     counts: Dict[str, int] = {}

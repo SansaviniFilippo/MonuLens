@@ -2,7 +2,7 @@ import { appEl, videoEl, canvasEl, hudEl, startBtn, statusEl, infoEl, detailEl, 
 import { status as setStatus, showInfo, hideHint, clearHotspots, clientPointToVideo, pointInBox } from './ui.js';
 import { initDetector, detector, closeDetector } from './detection.js';
 import { initEmbeddingModel } from './embedding.js';
-import { loadArtworkDB, pickLangText, getLang, setLang } from './db.js';
+import { loadMonumentDB, pickLangText, getLang, setLang } from './db.js';
 import { drawDetections, getLastMatches, resetRenderState } from './render.js';
 
 
@@ -611,8 +611,8 @@ async function runStartup() {
       await initDetector();
       status('Loading embedding model…');
       await initEmbeddingModel();
-      status('Loading artwork database…');
-      await loadArtworkDB();
+      status('Loading monument database…');
+      await loadMonumentDB();
       status('Ready');
     } catch (modelErr) {
       console.warn('Model init error (continuing with camera only):', modelErr);

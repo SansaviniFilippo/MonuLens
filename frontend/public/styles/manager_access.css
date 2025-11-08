@@ -9,8 +9,9 @@
     --field-border: #d7e2ef;
     --field-bg: #ffffff;
     --focus: #4a7ebb; /* evidenziazione blu media */
-    --btn1: #4a7ebb;  /* pulsante primario - inizio gradiente */
-    --btn2: #3a689f;  /* pulsante primario - fine gradiente */
+    --btn1: #3f79bd;  /* blu medio primario */
+    --primary: #3f79bd; /* nuovo blu medio elegante */
+    --primary-ink: #ffffff;
     --btn-ink: #ffffff;
     --accent-1: #5b89c2; /* lock gradiente start */
     --accent-2: #2e557d; /* lock gradiente end */
@@ -38,8 +39,7 @@ body{
 
 /* Lock badge */
 .badge{ display:grid; place-items:center; width:100px; height:100px; margin:28px auto 18px; border-radius:50%;
-  background:
-          linear-gradient(180deg, var(--accent-1), var(--accent-2));
+  background: linear-gradient(90deg, #5f97cd, #4178ba);
     box-shadow: 0 10px 24px rgba(31,58,99,0.35), inset 0 1px 0 rgba(255,255,255,0.45);
 }
 .badge svg{ width:40px; height:40px; color:#fff; }
@@ -73,12 +73,8 @@ label{ display:grid; gap:10px; font-weight:700; color:#26344f; font-size:16px; }
 
 /* Primary button */
 .btn{ appearance:none; border:0; border-radius:14px; height:60px; padding:0 22px; font-weight:800; font-size:18px; cursor:pointer; }
-.btn-primary{ width:100%; color:var(--btn-ink);
-    background: linear-gradient(180deg, var(--btn1), var(--btn2));
-    box-shadow: 0 14px 28px rgba(31,58,99,0.25);
-}
-.btn-primary:hover{ filter:brightness(1.05);
-    box-shadow: 0 18px 34px rgba(31,58,99,0.35); }
+.btn-primary { background: var(--primary); color: var(--primary-ink); box-shadow: 0 10px 24px rgba(18,33,55,0.16), 0 1px 0 rgba(255,255,255,0.35) inset; }
+.btn-primary:hover { filter: brightness(0.98); box-shadow: 0 12px 28px rgba(21,87,255,0.30); }
 
 /* Responsive small devices spacing tweaks */
 @media (max-width:480px){

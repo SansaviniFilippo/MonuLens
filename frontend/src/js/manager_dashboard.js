@@ -1,21 +1,20 @@
 import { initEmbeddingModel, embedFromCanvas } from './embedding.js';
 import { BACKEND_URL, CROP_SIZE } from './constants.js';
-import { getLang, loadArtworkDB } from './db.js';
+import { getLang, loadMonumentDB } from './db.js';
 
-const ADMIN_TOKEN_FIXED = 'artlens_admin';
+const ADMIN_TOKEN_FIXED = 'monulens_admin';
 
 const submitBtn = document.getElementById('submitBtn');
 const statusEl = document.getElementById('statusMsg');
 
-// === MAPPA OPENLAYERS ===
-let selectedCoordinates = null; // qui salveremo l'array [[lat, lon], ...]
 
-// === FUNZIONE: inizializza e mostra la mappa ===
+let selectedCoordinates = null;
+
 function initMapOverlay(existingGeoJSON = null) {
 
   if (window.currentMap) {
     try {
-      window.currentMap.setTarget(null); // distrugge la mappa vecchia
+      window.currentMap.setTarget(null);
     } catch (_) {}
     window.currentMap = null;
   }
@@ -207,7 +206,6 @@ function initMapOverlay(existingGeoJSON = null) {
 
 
 
-  // === Eventi bottoni ===
   document.getElementById("drawBtn").onclick = () => toggleDrawingMode(true);
   document.getElementById("undoBtn").onclick = () => {
     if (drawInteraction) drawInteraction.removeLastPoint();
@@ -226,7 +224,6 @@ function initMapOverlay(existingGeoJSON = null) {
     }
   };
 
-  // ✅ Conferma coordinate
   document.getElementById("confirmBtn").onclick = () => {
       let geojson = null;
 
@@ -251,7 +248,6 @@ function initMapOverlay(existingGeoJSON = null) {
           };
       }
 
-      // Se c'è un punto
       else if (pointFeatures.length > 0) {
           const f = pointFeatures[0];
           const [x, y] = f.getGeometry().getCoordinates();
@@ -267,7 +263,7 @@ function initMapOverlay(existingGeoJSON = null) {
           return;
       }
 
-      selectedCoordinates = geojson; // ora è un oggetto GeoJSON
+      selectedCoordinates = geojson;
       const hiddenInput = document.getElementById("location_coords");
       if (hiddenInput) hiddenInput.value = JSON.stringify(geojson);
 
@@ -275,7 +271,7 @@ function initMapOverlay(existingGeoJSON = null) {
       console.log("✅ GeoJSON salvato:", geojson);
   };
 
-  window.dispatchEvent(new Event("storage")); // forza applyLang()
+  window.dispatchEvent(new Event("storage"));
 }
 
 
@@ -373,7 +369,7 @@ async function onSubmit(e) {
     const json = await res.json().catch(() => ({}));
     setStatus('Operazione completata. Aggiorno memoria…');
     try {
-      await loadArtworkDB();
+      await loadMonumentDB();
     } catch (e) {
       console.warn('Reload DB after upsert failed:', e);
     }
@@ -434,8 +430,8 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
         filesCount: (n)=> n===1 ? '1 file' : `${n} file`,
         edit: 'Modifica',
         delete: 'Elimina',
-        confirmDeleteArtwork: 'Eliminare questa monumento? L’operazione non può essere annullata.',
-        editArtwork: 'Modifica Monumento',
+        confirmDeleteMonument: 'Eliminare questa monumento? L’operazione non può essere annullata.',
+        editMonument: 'Modifica Monumento',
         close: 'Chiudi',
         fieldLabels: { Name:'Nome', Artist:'Artista', Year:'Anno', ItalianDescription:'Descrizione Italiana', EnglishDescription:'Descrizione Inglese' },
         imageFiles: 'File Immagine',
@@ -487,8 +483,8 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
         filesCount: (n)=> n===1 ? '1 file' : `${n} files`,
         edit: 'Edit',
         delete: 'Delete',
-        confirmDeleteArtwork: 'Delete this monument? This cannot be undone.',
-        editArtwork: 'Edit Monument',
+        confirmDeleteMonument: 'Delete this monument? This cannot be undone.',
+        editMonument: 'Edit Monument',
         close: 'Close',
         fieldLabels: { Name:'Name', Artist:'Artist', Year:'Year', ItalianDescription:'Italian Description', EnglishDescription:'English Description' },
         imageFiles: 'Image Files',
@@ -622,7 +618,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
 
   // Auth guard and optional logout handling
   try {
-    const AUTH_KEY = 'artlens.auth';
+    const AUTH_KEY = 'monulens.auth';
     const qs = new URLSearchParams(location.search);
     if (qs.has('logout')) { try { localStorage.removeItem(AUTH_KEY); } catch(_) {} }
     const authed = !!localStorage.getItem(AUTH_KEY);
@@ -694,7 +690,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
 
   // Sign out
   const signOutBtn = document.getElementById('signOutBtn');
-  if (signOutBtn) signOutBtn.addEventListener('click', ()=>{ try { localStorage.removeItem('artlens.auth'); } catch(_) {} location.href = './manager_access.html'; });
+  if (signOutBtn) signOutBtn.addEventListener('click', ()=>{ try { localStorage.removeItem('monulens.auth'); } catch(_) {} location.href = './manager_access.html'; });
   // ------------------------------
   // Manage Collection: tabs + table
   // ------------------------------
@@ -726,7 +722,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
   async function loadCollection(){
     try {
       if (tbody) tbody.innerHTML = '';
-      const res = await fetch(`${BACKEND_URL}/catalog?with_image_counts=1`);
+      const res = await fetch(`${BACKEND_URL}/archive?with_image_counts=1`);
       const items = await res.json();
       renderCollection(Array.isArray(items) ? items : []);
     } catch (e) {
@@ -769,7 +765,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
         const id = e.currentTarget.getAttribute('data-id');
         if (!id) return;
         const trm = (I18N[getLang()] || I18N.it).manage;
-        if (!confirm(trm.confirmDeleteArtwork)) return;
+        if (!confirm(trm.confirmDeleteMonument)) return;
         try {
           const resp = await fetch(`${BACKEND_URL}/monuments/${encodeURIComponent(id)}`, { method:'DELETE', headers: { 'X-Admin-Token': ADMIN_TOKEN_FIXED }});
           if (!resp.ok) {
@@ -813,7 +809,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
     ov.innerHTML = `
       <div class="md-card" role="dialog" aria-modal="true" aria-labelledby="mdTitle">
         <div class="md-header">
-          <h3 id="mdTitle" class="md-title">${trm.editArtwork}</h3>
+          <h3 id="mdTitle" class="md-title">${trm.editMonument}</h3>
           <button class="md-close" type="button" title="${trm.close}" aria-label="${trm.close}">&times;</button>
         </div>
         <div class="md-body">
@@ -839,7 +835,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
               <textarea id="md_desc_en" class="md-textarea"></textarea>
             </div>
             <div class="full">
-              <button id="editMapBtn" class="btn-primary" type="button">🌍 Modifica posizione su mappa</button>
+              <button id="editMapBtn" class="btn-map-open" type="button">🌍 Modifica posizione su mappa</button>
               <input type="hidden" id="md_location_coords" />
             </div>
 
@@ -1002,7 +998,7 @@ if (formEl) formEl.addEventListener('submit', onSubmit);
       try {
         const res = await fetch(`${BACKEND_URL}/monuments`, { method:'POST', headers:{ 'Content-Type':'application/json','X-Admin-Token': ADMIN_TOKEN_FIXED}, body: JSON.stringify(payload)});
         if (!res.ok) throw new Error(await res.text());
-        try { await loadArtworkDB(); } catch (e) { console.warn('Reload DB after edit save failed:', e); }
+        try { await loadMonumentDB(); } catch (e) { console.warn('Reload DB after edit save failed:', e); }
         close();
         await loadCollection();
       } catch (err){

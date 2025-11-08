@@ -1,7 +1,7 @@
 import { videoEl, canvasEl } from './dom.js';
 import { clearHotspots, renderHotspot, placeHintOverBox, showHintFor, hideHint, showInfo, videoPointToDisplay } from './ui.js';
 import { cropToCanvasFromVideo, embedFromCanvas, hasEmbedModel } from './embedding.js';
-import { artworkDB, dbDim, pickLangText, getLang } from './db.js';
+import { monumentDB, dbDim, pickLangText, getLang } from './db.js';
 import { BACKEND_URL, COSINE_THRESHOLD, DEBUG_FALLBACK_CROP, MAX_BOXES_PER_FRAME, MIN_BOX_SCORE, CROP_SIZE } from './constants.js';
 
 let lastMatches = [];
@@ -20,7 +20,7 @@ try {
     if (stickyBest && stickyBest.entry) {
       try {
         showInfo(
-          stickyBest.entry.name || 'Artwork',
+          stickyBest.entry.name || 'Monument',
           pickLangText(stickyBest.entry.descriptions),
           stickyBest.confidence
         );
@@ -33,7 +33,6 @@ try {
 function geojsonHasNearbyPoint(geojson, user, radiusKm = 1.0) {
   if (!geojson || !geojson.type || !user?.lat || !user?.lon) return false;
 
-  // --- Funzione distanza Haversine (km)
   const haversineDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -46,7 +45,6 @@ function geojsonHasNearbyPoint(geojson, user, radiusKm = 1.0) {
     return 2 * R * Math.asin(Math.sqrt(a));
   };
 
-  // --- Distanza minima tra punto utente e un insieme di coordinate
   const minDistanceToCoords = (coords) => {
     let minDist = Infinity;
     for (const [lon, lat] of coords) {
@@ -56,7 +54,6 @@ function geojsonHasNearbyPoint(geojson, user, radiusKm = 1.0) {
     return minDist;
   };
 
-  // --- Verifica se un punto è dentro un poligono (Ray casting)
   const pointInPolygon = (point, polygonCoords) => {
     const [lon, lat] = point;
     const ring = polygonCoords[0];
@@ -111,7 +108,7 @@ function logPerfIfNeeded() {
     console.log(
       `[Perf] over ${s.samples} samples — crop: ${avg(s.cropMs)} ms, ` +
       `embed: ${avg(s.embedMs)} ms, match: ${avg(s.matchMs)} ms ` +
-      `(dbSize=${artworkDB.length}, dim=${dbDim})`
+      `(dbSize=${monumentDB.length}, dim=${dbDim})`
     );
     s.samples = 0; s.cropMs = 0; s.embedMs = 0; s.matchMs = 0; s.lastPrint = t;
   }
@@ -330,23 +327,23 @@ function drawCapsuleLabel(ctx, x, y, text, badge) {
 }
 
 function findBestMatch(embedding) {
-  if (!artworkDB.length || !embedding || typeof embedding.length !== 'number')
+  if (!monumentDB.length || !embedding || typeof embedding.length !== 'number')
     return null;
 
   // --- FILTRO GEOLOCALIZZATO ---
   const RADIUS_KM = 0.5;
   const user = window.userCoords;
-  let candidates = artworkDB;
+  let candidates = monumentDB;
 
   if (user?.lat && user?.lon) {
     try {
-      candidates = artworkDB.filter(e =>
+      candidates = monumentDB.filter(e =>
         geojsonHasNearbyPoint(e.location_coords, user, RADIUS_KM)
       );
       console.log(`🎯 Filtrate ${candidates.length} opere vicine (${RADIUS_KM} km)`);
     } catch (err) {
       console.warn('Errore filtro geolocalizzato:', err);
-      candidates = artworkDB; // fallback: usa tutte le opere
+      candidates = monumentDB; // fallback: usa tutte le opere
     }
   } else {
     console.log('📍 Nessuna posizione utente, confronto su tutte le opere');
@@ -421,7 +418,7 @@ export async function drawDetections(ctx, result, onHotspotClick) {
 
 
           // Show placard with localized description
-          try { showInfo(entry.name || 'Artwork', pickLangText(entry.descriptions), confidence); } catch {}
+          try { showInfo(entry.name || 'Monument', pickLangText(entry.descriptions), confidence); } catch {}
 
           const key = (entry && (entry.id != null ? String(entry.id) : (entry.name || '')));
           if (key && key !== lastRecognizedKey) {
@@ -480,7 +477,7 @@ export async function drawDetections(ctx, result, onHotspotClick) {
         try { console.log('Detected categories:', det.categories?.map(c => ({ name: c.categoryName, score: c.score }))); } catch {}
         categoryLogCount++;
       }
-      let name = cat.categoryName || 'artwork';
+      let name = cat.categoryName || 'Monument';
       let uiLabel = ``;
       let matched = null;
 
@@ -507,7 +504,7 @@ export async function drawDetections(ctx, result, onHotspotClick) {
               __perfRemote.crop.push(t1 - t0);
               __perfRemote.embed.push(t2 - t1);
               __perfRemote.match.push(t3 - t2);
-              __perfRemote.dbSize.push(artworkDB.length || 0);
+              __perfRemote.dbSize.push(monumentDB.length || 0);
               __perfRemote.dim.push(dbDim || 0);
             }
           } catch {}
@@ -520,11 +517,11 @@ export async function drawDetections(ctx, result, onHotspotClick) {
 
       if (matched && matched.confidence >= COSINE_THRESHOLD) {
         const { entry, confidence } = matched;
-        uiLabel = `${entry.name || 'Artwork'}`; // title only; confidence shown in badge
+        uiLabel = `${entry.name || 'Monument'}`; // name only; confidence shown in badge
         const hitBox = det.__alignedBox || det.boundingBox;
         lastMatches.push({ entry, confidence, box: hitBox });
         anyMatch = true;
-        // Overlay green styling to indicate recognized artwork
+        // Overlay green styling to indicate recognized monument
         drawCornerBrackets(ctx, box.originX, box.originY, box.width, box.height, getCornerLen(box.width, box.height), CORNER_OFFSET, GREEN);
       }
 
@@ -545,7 +542,7 @@ export async function drawDetections(ctx, result, onHotspotClick) {
     // Update recognition labels for all matches
     updateRecognitionLabels(lastMatches, onHotspotClick);
     placeHintOverBox(best.box);
-    try { showInfo(best.entry.name || 'Artwork', pickLangText(best.entry.descriptions), best.confidence); } catch {}
+    try { showInfo(best.entry.name || 'Monument', pickLangText(best.entry.descriptions), best.confidence); } catch {}
     const key = (best.entry && (best.entry.id != null ? String(best.entry.id) : (best.entry.name || '')));
     if (key && key !== lastRecognizedKey) {
       lastRecognizedKey = key;
@@ -667,7 +664,7 @@ function updateRecognitionLabels(matches, onClick) {
 
 // --- Console benchmark for pure matching loop ---
 export async function benchmarkMatchLoop(iterations = 200, warmup = 20) {
-  if (!artworkDB.length || !dbDim) {
+  if (!monumentDB.length || !dbDim) {
     console.warn('DB non caricato o dim sconosciuta');
     return;
   }
@@ -696,9 +693,9 @@ export async function benchmarkMatchLoop(iterations = 200, warmup = 20) {
   const mean = times.reduce((a,b)=>a+b,0)/N;
   const p = (x) => times[Math.floor(x*(N-1))];
   const p50 = p(0.50), p90 = p(0.90), p95 = p(0.95), p99 = p(0.99);
-  console.log(`[Bench Match] N=${N} mean=${mean.toFixed(3)}ms p50=${p50.toFixed(3)} p90=${p90.toFixed(3)} p95=${p95.toFixed(3)} p99=${p99.toFixed(3)} | DB=${artworkDB.length} dim=${dbDim}`);
-  try { if (typeof window !== 'undefined') window.__lastBenchMatch = { mean, p50, p90, p95, p99, N, dbSize: artworkDB.length, dim: dbDim }; } catch {}
-  return { mean, p50, p90, p95, p99, N, dbSize: artworkDB.length, dim: dbDim };
+  console.log(`[Bench Match] N=${N} mean=${mean.toFixed(3)}ms p50=${p50.toFixed(3)} p90=${p90.toFixed(3)} p95=${p95.toFixed(3)} p99=${p99.toFixed(3)} | DB=${monumentDB.length} dim=${dbDim}`);
+  try { if (typeof window !== 'undefined') window.__lastBenchMatch = { mean, p50, p90, p95, p99, N, dbSize: monumentDB.length, dim: dbDim }; } catch {}
+  return { mean, p50, p90, p95, p99, N, dbSize: monumentDB.length, dim: dbDim };
 }
 
 // Expose to window for easier Console access

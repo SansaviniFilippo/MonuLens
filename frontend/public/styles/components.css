@@ -43,14 +43,14 @@
 }
 .lang-toggle { display: flex; gap: 8px; pointer-events: auto; }
 .lang-toggle button { padding: 8px 12px; font-size: 13px; background: rgba(20,22,27,0.62); color: var(--fg); border: 1px solid rgba(197,164,109,0.36); box-shadow: var(--shadow-md); backdrop-filter: blur(8px) saturate(1.05); }
-.lang-toggle button.active { background: linear-gradient(180deg, var(--accent), #b89558); color: var(--accent-ink); border-color: rgba(197,164,109,0.6); box-shadow: var(--shadow-xl); }
+.lang-toggle button.active { background: linear-gradient(180deg, var(--accent), #36b681); color: var(--accent-ink); border-color: rgba(197,164,109,0.6); box-shadow: var(--shadow-xl); }
 
 button {
   appearance: none;
   border: 0;
   border-radius: 999px;
   padding: 12px 18px;
-  background: linear-gradient(180deg, var(--accent), #b89558);
+  background: linear-gradient(180deg, var(--accent), #36b681);
   color: var(--accent-ink);
   font-weight: 700;
   font-size: 16px;

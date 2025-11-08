@@ -6,8 +6,8 @@
   --bg-1: #14161b;         /* slightly lighter for layers */
   --fg:   #eceae6;         /* off-white text */
   --muted:#b7b1a6;         /* muted text */
-  --accent: #c5a46d;       /* museum gold */
-  --accent-ink: #221a10;   /* dark text on gold */
+  --accent: #63a9ff;       /* museum gold */
+  --accent-ink: #213759;   /* dark text on gold */
 
   /* Detection overlay colors used by JS */
   --box-color: #3b82f6; /* blue-500 for not-yet-recognized state */

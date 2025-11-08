@@ -3,7 +3,7 @@
     --card-bg: #ffffff;
     --ink: #0f1b2d;
     --muted: #60708a;
-    --primary: #4a7ebb; /* nuovo blu medio elegante */
+    --primary: #3f79bd; /* nuovo blu medio elegante */
     --primary-ink: #ffffff;
     --accent: #1f3a63;  /* blu profondo come bordo o dettaglio */
     --radius-card: 28px;
@@ -100,7 +100,6 @@ p.subtitle {
 /* Golden language bar for homepage */
 .card{ overflow: hidden; }
 .langbar {
-  /* golden gradient: from-amber-500 to-amber-600 */
   background: linear-gradient(90deg, #a8c5e2, #4a7ebb);
   border-radius: calc(var(--radius-card) - 2px) calc(var(--radius-card) - 2px) 0 0;
   /* extend to card edges by canceling card padding (same clamp values) */

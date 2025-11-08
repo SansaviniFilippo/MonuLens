@@ -8,8 +8,8 @@
   --bg-1: #14161b;         /* slightly lighter for layers */
   --fg:   #eceae6;         /* off-white text */
   --muted:#b7b1a6;         /* muted text */
-  --accent: #c5a46d;       /* museum gold */
-  --accent-ink: #221a10;   /* dark text on gold */
+  --accent: #63a9ff;
+  --accent-ink: #213759;
 
   /* Detection overlay colors used by JS */
   --box-color: var(--accent);
@@ -166,7 +166,7 @@ button {
   border: 0;
   border-radius: 999px;
   padding: 12px 18px;
-  background: linear-gradient(180deg, var(--accent), #b89558);
+  background: linear-gradient(180deg, var(--accent), #36b681);
   color: var(--accent-ink);
   font-weight: 700;
   font-size: 16px;
@@ -298,7 +298,7 @@ button:disabled { opacity: 0.6; cursor: default; }
 .detail-meta { color: #4b4b4b; font-size: 14px; margin-bottom: 12px; }
 .detail-body { color: #333; font-size: 15px; line-height: 1.6; }
 .detail-actions { margin-top: 18px; display: flex; justify-content: center; }
-.detail .back { background: linear-gradient(180deg, var(--accent), #b89558); color: var(--accent-ink); padding: 12px 18px; border-radius: 999px; font-weight: 700; box-shadow: var(--shadow-md); }
+.detail .back { background: linear-gradient(180deg, var(--accent), #36b681); color: var(--accent-ink); padding: 12px 18px; border-radius: 999px; font-weight: 700; box-shadow: var(--shadow-md); }
 
 @keyframes fadeInUp {
   from { opacity: 0; transform: translate3d(0, 8px, 0); }

@@ -2,7 +2,7 @@
 import { getLang, setLang } from './db.js';
 
 (function(){
-  const KEYS = { CREDS: 'artlens.creds', AUTH: 'artlens.auth' };
+  const KEYS = { CREDS: 'monulens.creds', AUTH: 'monulens.auth' };
 
   // Simple localization dictionary for this page
   const I18N = {

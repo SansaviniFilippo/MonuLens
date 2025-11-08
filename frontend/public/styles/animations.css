@@ -4,8 +4,8 @@
 }
 
 @keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(197,164,109,0.5); }
-  100% { box-shadow: 0 0 0 14px rgba(197,164,109,0); }
+  0% { box-shadow: 0 0 0 0 rgb(63, 121, 189); }
+  100% { box-shadow: 0 0 0 14px rgb(99, 169, 255); }
 }
 @keyframes fadeInUp {
   from { opacity: 0; transform: translate3d(0, 8px, 0); }
@@ -13,8 +13,8 @@
 }
 
 @keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(197,164,109,0.5); }
-  100% { box-shadow: 0 0 0 14px rgba(197,164,109,0); }
+  0% { box-shadow: 0 0 0 0 rgb(63, 121, 189); }
+  100% { box-shadow: 0 0 0 14px rgb(99, 169, 255); }
 }
 
 /* Premium overlay fade for detail */
