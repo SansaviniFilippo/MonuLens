@@ -110,16 +110,105 @@ input[type="file"]{ position:absolute; width:1px; height:1px; overflow:hidden; c
 .mgmt-table thead th{ background:#f7f9fd; color:#1e2b47; text-align:left; padding:16px 18px; font-weight:800; border-bottom:1px solid var(--line); }
 .mgmt-table tbody td{ padding:18px; border-bottom:1px solid var(--line); color:#24334f; }
 .mgmt-table tbody tr:hover{ background:#fafcff; }
-.mgmt-table .actions-col{ width:220px; text-align:right; }
-.mgmt-table .col-title{ font-weight:700; font-size:18px; color:#1d2b4a; }
+/*.mgmt-table .actions-col{ width:220px; text-align:right; } */
+.mgmt-table .col-name{ font-weight:700; font-size:18px; color:#1d2b4a; }
 .mgmt-table .col-images{ color:#495c7b; font-weight:700; }
 
-/* Action buttons */
-.btn-edit{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:12px; border:2px solid #c7d5ff; color:#1c4be9; background:#eef3ff; font-weight:800; cursor:pointer; margin-right:10px; }
-.btn-edit:hover{ filter:brightness(0.98); }
-.btn-edit span{ display:inline-block; }
-.btn-del{ display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:12px; border:2px solid #ffd4d4; background:#fff4f4; color:#d91c1c; cursor:pointer; }
-.btn-del:hover{ filter:brightness(0.98); }
+/* Usa auto-layout: lascia regolare il browser */
+.mgmt-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: auto; /* <<< RIMOSSO fixed */
+}
+
+/* NAME prende spazio ma non troppo */
+.mgmt-table th:nth-child(1),
+.mgmt-table td:nth-child(1) {
+  width: 45%; /* prima 60% */
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+/* IMAGES mantiene dimensione stabile */
+.mgmt-table th:nth-child(2),
+.mgmt-table td:nth-child(2) {
+  width: 18%; /* leggermente più stretto */
+  text-align: center;
+}
+
+/* Actions: larghezza naturale e layout orizzontale */
+.mgmt-table th:nth-child(3),
+.mgmt-table td:nth-child(3) {
+  width: auto;              /* lascia che prenda lo spazio necessario */
+  text-align: right;
+}
+
+/* Mantieni i bottoni affiancati su desktop */
+.mgmt-table td:nth-child(3) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;                /* spazio naturale tra i bottoni */
+}
+
+.col-name {
+  white-space: normal;   /* il testo può andare a capo */
+  overflow-wrap: break-word; /* evita overflow */
+}
+
+/* Riduzione padding generale della riga su mobile */
+@media (max-width: 550px) {
+  .mgmt-table td,
+  .mgmt-table th {
+    padding: 12px;
+  }
+}
+
+
+/* Bottoni azione uniformati */
+.btn-edit, .btn-del {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+/* Modifica */
+.btn-edit {
+  border-color: #c7d5ff;
+  background: #eef3ff;
+  color: #1c4be9;
+}
+
+/* Elimina */
+.btn-del {
+  border-color: #ffd4d4;
+  background: #fff4f4;
+  color: #d91c1c;
+}
+
+/* Effetto hover */
+.btn-edit:hover, .btn-del:hover {
+  filter: brightness(0.98);
+}
+
+@media (max-width: 550px) {
+  .mgmt-table td:nth-child(3) {
+    flex-direction: column;  /* bottoni uno sopra l'altro */
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  .btn-edit, .btn-del {
+    width: 40px;
+    height: 40px;
+  }
+}
 
 /* Edit Modal */
 .md-overlay{ position:fixed; inset:0; background: rgba(8,18,36,0.55); display:flex; align-items:flex-start; justify-content:center; padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); z-index:1000; overflow:auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
