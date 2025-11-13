@@ -10,7 +10,7 @@ let userCoords = null;
 window.userCoords = userCoords;
 let userMarkerFeature = null;
 
-async function getUserPosition(countdownMs = 8000) {
+async function getUserPosition(countdownMs = 10000) {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
       reject("Geolocation non supportata");
@@ -25,9 +25,15 @@ async function getUserPosition(countdownMs = 8000) {
       const { latitude, longitude, accuracy } = pos.coords;
       console.log(`→ Nuova posizione: ${latitude.toFixed(5)}, ${longitude.toFixed(5)} (accuracy ${accuracy}m)`);
 
-      // Aggiorna userCoords globali continuamente
-      userCoords = { lat: latitude, lon: longitude, acc: accuracy };
-      window.userCoords = userCoords;
+      // Aggiorna solo se la posizione è abbastanza precisa
+      if (accuracy < 50) {
+        userCoords = { lat: latitude, lon: longitude, acc: accuracy };
+        window.userCoords = userCoords;
+      } else {
+        // Posizione troppo imprecisa → NON accettare
+        console.log("❌ Posizione scartata: accuratezza troppo bassa (" + accuracy + "m)");
+      }
+
 
       // Mantiene la più precisa come best
       if (!bestPos || accuracy < bestPos.coords.accuracy) {
@@ -41,10 +47,13 @@ async function getUserPosition(countdownMs = 8000) {
         resolve(userCoords);
       }
 
-      // Aggiorna la mappa live (se aperta)
       if (window.userMarkerFeature && window.detailMapInstance) {
-        const coords = ol.proj.fromLonLat([longitude, latitude]);
-        window.userMarkerFeature.getGeometry().setCoordinates(coords);
+        if (accuracy < 50) {
+          const coords = ol.proj.fromLonLat([longitude, latitude]);
+          window.userMarkerFeature.getGeometry().setCoordinates(coords);
+        } else {
+          console.log("❌ Marker non aggiornato: posizione imprecisa");
+        }
       }
     }
 
@@ -70,14 +79,14 @@ async function getUserPosition(countdownMs = 8000) {
     setTimeout(() => {
       if (!resolved) {
         resolved = true;
-        if (bestPos) {
+        if (bestPos && bestPos.coords.accuracy < 50) {
+          // buona posizione → accetta
           const { latitude, longitude, accuracy } = bestPos.coords;
           userCoords = { lat: latitude, lon: longitude, acc: accuracy };
-          window.userCoords = userCoords;
-          console.log("⚠️ Timeout GPS, uso bestPos:", userCoords);
           resolve(userCoords);
         } else {
-          console.warn("❌ Nessuna posizione ottenuta entro timeout");
+          // nessuna posizione abbastanza precisa → ritorna null
+          console.log("❌ Nessuna posizione precisa trovata");
           resolve(null);
         }
       }
@@ -107,7 +116,7 @@ function getI18n(lang) {
       start: "Avvia",
       back: "Indietro",
       activation: {
-        title: "Attivazione fotocamera",
+        title: "Avvio del sistema di riconoscimento",
         subHTML: "Preparati a <span class=\"accent\">inquadrare il monumento</span> con la fotocamera",
         permNeeded: "Autorizzazione fotocamera necessaria"
       },
@@ -132,7 +141,7 @@ function getI18n(lang) {
       start: "Start",
       back: "Back",
       activation: {
-        title: "Camera Activating",
+        title: "Starting the recognition system",
         subHTML: "Get ready to <span class=\"accent\">frame the monument</span> in your camera view",
         permNeeded: "Camera permission needed"
       },
@@ -591,7 +600,7 @@ async function runStartup() {
   const cnt = document.getElementById('activateCountdown');
   const bar = document.getElementById('activateBar');
 
-  function startCountdown(ms = 3000) {
+  function startCountdown(ms = 10000) {
     if (!activate) return Promise.resolve();
     activate.classList.remove('hidden');
     const totalSteps = Math.max(1, Math.ceil(ms / 1000)); // e.g., 3s -> 3 steps
@@ -635,15 +644,61 @@ async function runStartup() {
   }
 
   try {
+    console.time("⏱️ runStartup total time");
+
     status('Starting camera…');
-    const COUNTDOWN_MS = 10000; // tempo del countdown in ms (5 secondi)
+    const COUNTDOWN_MS = 10000; // tempo del countdown in ms (10 secondi)
 
-    const camPromise = startCamera();
-    const cdPromise = startCountdown(COUNTDOWN_MS);
-    const geoPromise = getUserPosition(COUNTDOWN_MS);
+    // 📷 CAMERA
+    console.time("📷 startCamera()");
+    const camPromise = startCamera().then(() => {
+        console.timeEnd("📷 startCamera()");
+    });
 
-    // aspetta che finiscano contemporaneamente camera, countdown e posizione
-    await Promise.all([camPromise, cdPromise, geoPromise]);
+    console.time("⏱️ startCountdown()");
+    const cdPromise = startCountdown(COUNTDOWN_MS).then(() => {
+        console.timeEnd("⏱️ startCountdown()");
+    });
+
+    console.time("📍 getUserPosition()");
+    const geoPromise = getUserPosition(COUNTDOWN_MS).then(() => {
+        console.timeEnd("📍 getUserPosition()");
+    });
+
+    const modelPromise = (async () => {
+      try {
+        // ⏱️ TEMPO TOTALE MODELLI
+        console.time("🧠 AI models: TOTAL");
+
+        // Detector
+        console.time("🔍 initDetector()");
+        await initDetector();
+        console.timeEnd("🔍 initDetector()");
+
+        // Embedding model
+        console.time("📐 initEmbeddingModel()");
+        await initEmbeddingModel();
+        console.timeEnd("📐 initEmbeddingModel()");
+
+        // Monument DB
+        console.time("📦 loadMonumentDB()");
+        await loadMonumentDB();
+        console.timeEnd("📦 loadMonumentDB()");
+
+        console.log("Modelli caricati durante il countdown");
+
+        // 🔚 TEMPO TOTALE MODELLI
+        console.timeEnd("🧠 AI models: TOTAL");
+
+      } catch (e) {
+        console.error("Errore caricamento modelli:", e);
+      }
+    })();
+
+    // aspetta che finiscano contemporaneamente camera, countdown, posizione e modelli
+    await Promise.all([camPromise, cdPromise, geoPromise, modelPromise]);
+    console.timeEnd("⏱️ runStartup total time");
+    console.log("🔥 Tutte le promesse risolte: camera, countdown, GPS e modelli pronti!");
     hideActivate();
 
     if (hudEl) hudEl.classList.add('hidden');
@@ -655,19 +710,6 @@ async function runStartup() {
       console.log("✅ Posizione utente valida:", userCoords);
     } else {
       console.warn("⚠️ Posizione non precisa o non disponibile");
-    }
-
-    try {
-      status('Initializing object detector…');
-      await initDetector();
-      status('Loading embedding model…');
-      await initEmbeddingModel();
-      status('Loading monument database…');
-      await loadMonumentDB();
-      status('Ready');
-    } catch (modelErr) {
-      console.warn('Model init error (continuing with camera only):', modelErr);
-      status('Camera running. Model init failed: ' + (modelErr?.message || modelErr));
     }
   } catch (err) {
     console.error(err);
