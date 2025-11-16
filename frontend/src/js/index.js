@@ -10,7 +10,7 @@ let userCoords = null;
 window.userCoords = userCoords;
 let userMarkerFeature = null;
 
-async function getUserPosition(countdownMs = 15000) {
+async function getUserPosition(countdownMs = 5000) {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
       reject("Geolocation non supportata");
@@ -612,7 +612,7 @@ async function runStartup() {
   const cnt = document.getElementById('activateCountdown');
   const bar = document.getElementById('activateBar');
 
-  function startCountdown(ms = 15000) {
+  function startCountdown(ms = 5000) {
     if (!activate) return Promise.resolve();
     activate.classList.remove('hidden');
     const totalSteps = Math.max(1, Math.ceil(ms / 1000)); // e.g., 3s -> 3 steps
@@ -659,7 +659,7 @@ async function runStartup() {
     console.time("⏱️ runStartup total time");
 
     status('Starting camera…');
-    const COUNTDOWN_MS = 15000; // tempo del countdown in ms (15 secondi)
+    const COUNTDOWN_MS = 5000; // tempo del countdown in ms (5 secondi)
 
     // 📷 CAMERA
     console.time("📷 startCamera()");
@@ -677,40 +677,10 @@ async function runStartup() {
         console.timeEnd("📍 getUserPosition()");
     });
 
-    const modelPromise = (async () => {
-      try {
-        // ⏱️ TEMPO TOTALE MODELLI
-        console.time("🧠 AI models: TOTAL");
-
-        // Detector
-        console.time("🔍 initDetector()");
-        await initDetector();
-        console.timeEnd("🔍 initDetector()");
-
-        // Embedding model
-        console.time("📐 initEmbeddingModel()");
-        await initEmbeddingModel();
-        console.timeEnd("📐 initEmbeddingModel()");
-
-        // Monument DB
-        console.time("📦 loadMonumentDB()");
-        await loadMonumentDB();
-        console.timeEnd("📦 loadMonumentDB()");
-
-        console.log("Modelli caricati durante il countdown");
-
-        // 🔚 TEMPO TOTALE MODELLI
-        console.timeEnd("🧠 AI models: TOTAL");
-
-      } catch (e) {
-        console.error("Errore caricamento modelli:", e);
-      }
-    })();
-
-    // aspetta che finiscano contemporaneamente camera, countdown, posizione e modelli
-    await Promise.all([camPromise, cdPromise, geoPromise, modelPromise]);
+    // aspetta che finiscano contemporaneamente camera, countdown, posizione
+    await Promise.all([camPromise, cdPromise, geoPromise]);
     console.timeEnd("⏱️ runStartup total time");
-    console.log("🔥 Tutte le promesse risolte: camera, countdown, GPS e modelli pronti!");
+    console.log("🔥 Tutte le promesse risolte: camera, countdown, GPS pronti!");
     hideActivate();
 
     if (hudEl) hudEl.classList.add('hidden');
@@ -723,6 +693,33 @@ async function runStartup() {
     } else {
       console.warn("⚠️ Posizione non precisa o non disponibile");
     }
+
+    try {
+      // ⏱️ TEMPO TOTALE MODELLI
+      console.time("🧠 AI models: TOTAL");
+
+      // Detector
+      console.time("🔍 initDetector()");
+      await initDetector();
+      console.timeEnd("🔍 initDetector()");
+
+      // Embedding model
+      console.time("📐 initEmbeddingModel()");
+      await initEmbeddingModel();
+      console.timeEnd("📐 initEmbeddingModel()");
+
+      // Monument DB
+      console.time("📦 loadMonumentDB()");
+      await loadMonumentDB();
+      console.timeEnd("📦 loadMonumentDB()");
+
+      // 🔚 TEMPO TOTALE MODELLI
+      console.timeEnd("🧠 AI models: TOTAL");
+
+    } catch (e) {
+      console.error("Errore caricamento modelli:", e);
+    }
+
   } catch (err) {
     console.error(err);
     if (startBtn) startBtn.disabled = false;

@@ -336,7 +336,7 @@ function findBestMatch(embedding) {
   console.log("User coords:", window.userCoords);
 
   // --- FILTRO GEOLOCALIZZATO ---
-  const RADIUS_KM = 0.5;
+  const RADIUS_KM = 0.3; // 300 metri
   const user = window.userCoords;
   let candidates = monumentDB;
 
