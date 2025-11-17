@@ -345,8 +345,6 @@ function findBestMatch(embedding) {
       console.warn('Errore filtro geolocalizzato:', err);
       candidates = monumentDB;
     }
-  } else {
-    console.log('⚠️ Nessuna posizione: confronto con TUTTI i monumenti');
   }
 
   if (!candidates.length) {
@@ -359,7 +357,6 @@ function findBestMatch(embedding) {
   let bestIdx = -1;
   let bestSim = -1.0;
 
-  console.log("📊 Similarità con tutti i candidati:");
   for (let i = 0; i < candidates.length; i++) {
     const e = candidates[i];
     const vec = e.embedding;
